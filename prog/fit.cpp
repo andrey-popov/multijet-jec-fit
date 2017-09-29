@@ -3,6 +3,7 @@
  */
 
 #include <FitBase.hpp>
+#include <PhotonJet.hpp>
 #include <Multijet.hpp>
 
 #include <Minuit2/Minuit2Minimizer.h>
@@ -46,9 +47,9 @@ int main(int argc, char **argv)
     
     
     // Parse arguments
-    if (argc != 2)
+    if (argc != 3)
     {
-        cerr << "Usage: fit inputFile.root\n";
+        cerr << "Usage: fit inputPhotonJet.root inputMultijet.root\n";
         return EXIT_FAILURE;
     }
     
@@ -57,7 +58,10 @@ int main(int argc, char **argv)
     auto jetCorr = make_unique<JetCorr>();
     CombLossFunction lossFunc(move(jetCorr));
     
-    Multijet measurementMultijet(argv[1], Multijet::Method::PtBal);
+    PhotonJet measurementPhotonJet(argv[1], PhotonJet::Method::PtBal);
+    lossFunc.AddMeasurement(&measurementPhotonJet);
+    
+    Multijet measurementMultijet(argv[2], Multijet::Method::PtBal);
     lossFunc.AddMeasurement(&measurementMultijet);
     
     

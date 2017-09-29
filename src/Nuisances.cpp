@@ -1,5 +1,6 @@
 #include <Nuisances.hpp>
 
 
-Nuisances::Nuisances()
+Nuisances::Nuisances():
+    photonScale(0.)
 {}

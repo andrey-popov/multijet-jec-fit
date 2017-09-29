@@ -18,5 +18,10 @@ struct Nuisances
      */
     Nuisances();
     
-    // No nuisance parameters are defined at the moment
+    /**
+     * \brief Relative difference between photon pt scale in data and simulation
+     * 
+     * Defined such that ptData = (1 + photonScale) * ptSim.
+     */
+    double photonScale;
 };

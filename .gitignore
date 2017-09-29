@@ -7,3 +7,6 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 Makefile
+
+# Output files
+*.out
