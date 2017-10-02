@@ -13,5 +13,5 @@ To build the package and run an example fit program, execute
 ```bash
 cmake .
 make
-bin/fit "" /gridgroup/cms/popov/Analyses/JetMET/2017.09.07_New-method-real-setup/Analysis/multijet.root
+bin/fit "" /gridgroup/cms/popov/Analyses/JetMET/2017.09.07_New-method-real-setup/UpdatedInputs/multijet_Run2016H.root
 ```
