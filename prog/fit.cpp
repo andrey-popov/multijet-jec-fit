@@ -1,7 +1,8 @@
 /**
- * Fits jet correction using multijet data.
+ * Fits jet correction using photon+jet and multijet data.
  */
 
+#include <JetCorrDefinitions.hpp>
 #include <FitBase.hpp>
 #include <PhotonJet.hpp>
 #include <Multijet.hpp>
@@ -15,30 +16,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-
-
-class JetCorr: public JetCorrBase
-{
-public:
-    JetCorr();
-    
-public:
-    virtual double Eval(double pt) const override;
-};
-
-
-JetCorr::JetCorr():
-    JetCorrBase(1)
-{}
-
-
-double JetCorr::Eval(double pt) const
-{
-    double const b = 1.;
-    double const ptmin = 15.;
-    return 1. + parameters[0] * std::log(pt / ptmin) +
-      parameters[0] / b * (std::pow(pt / ptmin, -b) - 1);
-}
 
 
 int main(int argc, char **argv)
@@ -55,7 +32,7 @@ int main(int argc, char **argv)
     
     
     // Construct an object to evaluate the loss function
-    auto jetCorr = make_unique<JetCorr>();
+    auto jetCorr = make_unique<JetCorrStd2P>();
     CombLossFunction lossFunc(move(jetCorr));
     
     PhotonJet measurementPhotonJet(argv[1], PhotonJet::Method::PtBal);
