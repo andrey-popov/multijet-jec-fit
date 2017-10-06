@@ -4,6 +4,7 @@
 
 #include <vector>
 
+#include <TGraphErrors.h>
 
 /**
  * \class PhotonJet
@@ -57,4 +58,10 @@ public:
 private:
     /// Input data in bins of photon pt
     std::vector<PtBin> bins;
+
+    // TGraphError containing the ratio data over MC  of the extrapolated responses , for data and simulation. All have the same binning. 
+    std::unique_ptr<TGraphErrors> ExtrapRatio;
+
+
+
 };
