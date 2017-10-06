@@ -24,10 +24,25 @@ int main(int argc, char **argv)
     
     
     // Parse arguments
-    if (argc != 3)
+    if (argc < 3 or argc > 4)
     {
-        cerr << "Usage: fit inputPhotonJet.root inputMultijet.root\n";
+        cerr << "Usage: fit inputPhotonJet.root inputMultijet.root [method]\n";
         return EXIT_FAILURE;
+    }
+    
+    bool useMPF = false;
+    
+    if (argc >= 4)
+    {
+        string const methodLabel(argv[3]);
+        
+        if (methodLabel == "MPF")
+            useMPF = true;
+        else if (methodLabel != "PtBal")
+        {
+            cerr << "Do not recognize method \"" << methodLabel << "\".\n";
+            return EXIT_FAILURE;
+        }
     }
     
     
@@ -35,10 +50,12 @@ int main(int argc, char **argv)
     auto jetCorr = make_unique<JetCorrStd2P>();
     CombLossFunction lossFunc(move(jetCorr));
     
-    PhotonJet measurementPhotonJet(argv[1], PhotonJet::Method::PtBal);
+    PhotonJet measurementPhotonJet(argv[1],
+      (useMPF) ? PhotonJet::Method::MPF : PhotonJet::Method::PtBal);
     lossFunc.AddMeasurement(&measurementPhotonJet);
     
-    Multijet measurementMultijet(argv[2], Multijet::Method::PtBal);
+    Multijet measurementMultijet(argv[2],
+      (useMPF) ? Multijet::Method::MPF : Multijet::Method::PtBal);
     lossFunc.AddMeasurement(&measurementMultijet);
     
     
@@ -91,7 +108,7 @@ int main(int argc, char **argv)
     for (unsigned i = 0; i < nPars; ++i)
         resFile << results[i] << " ";
     
-    resFile << "\n# Covariance matrix:\n";
+    resFile << "\n\n# Covariance matrix:\n";
     
     for (unsigned i = 0; i < nPars; ++i)
     {
