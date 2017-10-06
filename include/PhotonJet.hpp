@@ -4,13 +4,19 @@
 
 #include <vector>
 
-#include <TGraphErrors.h>
 
 /**
  * \class PhotonJet
  * \brief Implements computation of deviation of data from expectation in the photon + jet analysis
  * 
- * At the moment this is only a template for the actual implementation.
+ * The deviation is computed as a chi^2 distance with
+ *   chi^2 = sum_i (B^{Data}_i / B^{Sim}_i - 1 / corr(p_i))^2 / sigma_i^2,
+ * where B_i is the mean balance observable in bin i, p_i is the mean pt of the photon, and sigma_i
+ * is the statistical uncertainty on the ratio. The mean balance observables are extrapolated to
+ * alpha = 0.
+ * 
+ * Changes of photon pt scale in data are propagated into the ratio of balance observables and the
+ * pt of the photon.
  */
 class PhotonJet: public DeviationBase
 {
@@ -58,10 +64,4 @@ public:
 private:
     /// Input data in bins of photon pt
     std::vector<PtBin> bins;
-
-    // TGraphError containing the ratio data over MC  of the extrapolated responses , for data and simulation. All have the same binning. 
-    std::unique_ptr<TGraphErrors> ExtrapRatio;
-
-
-
 };
