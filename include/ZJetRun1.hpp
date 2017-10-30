@@ -6,7 +6,7 @@
 
 
 /**
- * \class ZJet
+ * \class ZJetRun1
  * \brief Implements computation of deviation of data from expectation in the Z + jet analysis
  * 
  * The deviation is computed as a chi^2 distance with
@@ -15,7 +15,7 @@
  * sigma_i is the statistical uncertainty on the ratio. The mean balance observables are
  * extrapolated to alpha = 0.
  */
-class ZJet: public DeviationBase
+class ZJetRun1: public DeviationBase
 {
 public:
     /// Supported methods of computation
@@ -41,7 +41,7 @@ private:
     
 public:
     /// Constructor
-    ZJet(std::string const &fileName, Method method);
+    ZJetRun1(std::string const &fileName, Method method);
     
 public:
     /**

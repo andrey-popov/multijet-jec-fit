@@ -11,7 +11,7 @@
 
 
 /**
- * \class NewPhotonJet
+ * \class PhotonJetBinnedSum
  * \brief Implements computation of deviation of data from expectation in the photon + jet analysis
  * 
  * The deviation is computed as a chi^2 distance,
@@ -22,7 +22,7 @@
  * 
  * Changes of photon pt scale in data are propagated into the pt of the photon.
  */
-class NewPhotonJet: public DeviationBase
+class PhotonJetBinnedSum: public DeviationBase
 {
 public:
     /// Supported methods of computation
@@ -34,7 +34,7 @@ public:
     
 public:
     /// Constructor
-    NewPhotonJet(std::string const &fileName, Method method);
+    PhotonJetBinnedSum(std::string const &fileName, Method method);
     
 public:
     /**

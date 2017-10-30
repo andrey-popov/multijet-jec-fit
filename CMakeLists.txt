@@ -13,7 +13,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -O2")
 # Sources of the main library
 set(LIBRARY_SOURCES "")
 
-foreach(src JetCorrDefinitions.cpp FitBase.cpp PhotonJet.cpp NewPhotonJet.cpp ZJet.cpp Multijet.cpp Nuisances.cpp Rebin.cpp)
+foreach(src JetCorrDefinitions.cpp FitBase.cpp Nuisances.cpp
+    PhotonJetBinnedSum.cpp PhotonJetRun1.cpp ZJetRun1.cpp MultijetBinnedSum.cpp Rebin.cpp)
     list(APPEND LIBRARY_SOURCES "${PROJECT_SOURCE_DIR}/src/${src}")
 endforeach(src)
 

@@ -6,7 +6,7 @@
 
 
 /**
- * \class PhotonJet
+ * \class PhotonJetRun1
  * \brief Implements computation of deviation of data from expectation in the photon + jet analysis
  * 
  * The deviation is computed as a chi^2 distance with
@@ -18,7 +18,7 @@
  * Changes of photon pt scale in data are propagated into the ratio of balance observables and the
  * pt of the photon.
  */
-class PhotonJet: public DeviationBase
+class PhotonJetRun1: public DeviationBase
 {
 public:
     /// Supported methods of computation
@@ -44,7 +44,7 @@ private:
     
 public:
     /// Constructor
-    PhotonJet(std::string const &fileName, Method method);
+    PhotonJetRun1(std::string const &fileName, Method method);
     
 public:
     /**

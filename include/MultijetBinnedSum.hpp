@@ -16,7 +16,7 @@ struct FracBin;
 
 
 /**
- * \class Multijet
+ * \class MultijetBinnedSum
  * \brief Implements computation of the deviation of data from expectation in the multijet analysis
  * 
  * The deviation is computed as a chi^2 distance,
@@ -27,7 +27,7 @@ struct FracBin;
  * [1] https://indico.cern.ch/event/646599/#50-on-the-way-to-an-updated-mu
  * [2] https://indico.cern.ch/event/656050/#65-comparison-of-different-app
  */
-class Multijet: public DeviationBase
+class MultijetBinnedSum: public DeviationBase
 {
 public:
     /// Supported methods of computation
@@ -86,7 +86,7 @@ private:
         
 public:
     /// Constructor
-    Multijet(std::string const &fileName, Method method);
+    MultijetBinnedSum(std::string const &fileName, Method method);
     
 public:
     /**

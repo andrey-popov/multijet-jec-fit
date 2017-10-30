@@ -1,4 +1,4 @@
-#include <NewPhotonJet.hpp>
+#include <PhotonJetBinnedSum.hpp>
 
 #include <cmath>
 #include <memory>
@@ -8,12 +8,12 @@
 using namespace std::string_literals;
 
 
-NewPhotonJet::NewPhotonJet(std::string const &fileName, Method method)
+PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName, Method method)
 {
     if (method == Method::MPF)
     {
         std::ostringstream message;
-        message << "NewPhotonJet:: NewPhotonJet: MPF method is not implemented yet.";
+        message << "PhotonJetBinnedSum:: PhotonJetBinnedSum: MPF method is not implemented yet.";
         throw std::runtime_error(message.str());
     }
     
@@ -30,7 +30,8 @@ NewPhotonJet::NewPhotonJet(std::string const &fileName, Method method)
     if (inputFile.IsZombie())
     {
         std::ostringstream message;
-        message << "NewPhotonJet:: NewPhotonJet: Failed to open file \"" << fileName << "\".";
+        message << "PhotonJetBinnedSum:: PhotonJetBinnedSum: Failed to open file \"" <<
+          fileName << "\".";
         throw std::runtime_error(message.str());
     }
     
@@ -63,13 +64,13 @@ NewPhotonJet::NewPhotonJet(std::string const &fileName, Method method)
 }
 
 
-unsigned NewPhotonJet::GetDim() const
+unsigned PhotonJetBinnedSum::GetDim() const
 {
     return simBalProfile->GetNbinsX();
 }
 
 
-double NewPhotonJet::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
+double PhotonJetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     double chi2 = 0.;
     double const jetPtMin = 30.;

@@ -4,9 +4,9 @@
 
 #include <JetCorrDefinitions.hpp>
 #include <FitBase.hpp>
-#include <PhotonJet.hpp>
-#include <ZJet.hpp>
-#include <Multijet.hpp>
+#include <MultijetBinnedSum.hpp>
+#include <PhotonJetRun1.hpp>
+#include <ZJetRun1.hpp>
 
 #include <Minuit2/Minuit2Minimizer.h>
 #include <Math/Functor.h>
@@ -51,17 +51,17 @@ int main(int argc, char **argv)
     auto jetCorr = make_unique<JetCorrStd2P>();
     CombLossFunction lossFunc(move(jetCorr));
     
-    PhotonJet measurementPhotonJet(argv[1],
-      (useMPF) ? PhotonJet::Method::MPF : PhotonJet::Method::PtBal);
+    PhotonJetRun1 measurementPhotonJet(argv[1],
+      (useMPF) ? PhotonJetRun1::Method::MPF : PhotonJetRun1::Method::PtBal);
     lossFunc.AddMeasurement(&measurementPhotonJet);
     
-    Multijet measurementMultijet(argv[2],
-      (useMPF) ? Multijet::Method::MPF : Multijet::Method::PtBal);
-    lossFunc.AddMeasurement(&measurementMultijet);
-    
-    ZJet measurementZJet(argv[3],
-      (useMPF) ? ZJet::Method::MPF : ZJet::Method::PtBal);
+    ZJetRun1 measurementZJet(argv[3],
+      (useMPF) ? ZJetRun1::Method::MPF : ZJetRun1::Method::PtBal);
     lossFunc.AddMeasurement(&measurementZJet);
+    
+    MultijetBinnedSum measurementMultijet(argv[2],
+      (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal);
+    lossFunc.AddMeasurement(&measurementMultijet);
     
     unsigned const nPars = lossFunc.GetNumParams();
     

@@ -1,4 +1,4 @@
-#include <ZJet.hpp>
+#include <ZJetRun1.hpp>
 
 #include <cmath>
 #include <memory>
@@ -9,7 +9,7 @@
 using namespace std::string_literals;
 
 
-ZJet::ZJet(std::string const &fileName, Method method)
+ZJetRun1::ZJetRun1(std::string const &fileName, Method method)
 {
     std::string methodLabel;
     
@@ -49,13 +49,13 @@ ZJet::ZJet(std::string const &fileName, Method method)
 }
 
 
-unsigned ZJet::GetDim() const
+unsigned ZJetRun1::GetDim() const
 {
     return bins.size();
 }
 
 
-double ZJet::Eval(JetCorrBase const &corrector, Nuisances const &) const
+double ZJetRun1::Eval(JetCorrBase const &corrector, Nuisances const &) const
 {
     double chi2 = 0.;
     

@@ -1,4 +1,4 @@
-#include <PhotonJet.hpp>
+#include <PhotonJetRun1.hpp>
 
 #include <cmath>
 #include <memory>
@@ -9,7 +9,7 @@
 using namespace std::string_literals;
 
 
-PhotonJet::PhotonJet(std::string const &fileName, Method method)
+PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method)
 {
     std::string methodLabel;
     
@@ -50,13 +50,13 @@ PhotonJet::PhotonJet(std::string const &fileName, Method method)
 }
 
 
-unsigned PhotonJet::GetDim() const
+unsigned PhotonJetRun1::GetDim() const
 {
     return bins.size();
 }
 
 
-double PhotonJet::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
+double PhotonJetRun1::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     double chi2 = 0.;
     

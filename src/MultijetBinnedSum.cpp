@@ -1,4 +1,4 @@
-#include <Multijet.hpp>
+#include <MultijetBinnedSum.hpp>
 
 #include <Rebin.hpp>
 
@@ -18,7 +18,8 @@
 using namespace std::string_literals;
 
 
-Multijet::Multijet(std::string const &fileName, Multijet::Method method_):
+MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
+  MultijetBinnedSum::Method method_):
     method(method_)
 {
     std::string methodLabel;
@@ -73,9 +74,9 @@ Multijet::Multijet(std::string const &fileName, Multijet::Method method_):
             if (not directory->Get(name.c_str()))
             {
                 std::ostringstream message;
-                message << "Multijet::Multijet: Directory \"" << key->GetName() << 
-                  "\" in file \"" << fileName << "\" does not contain required key \"" <<
-                  name << "\".";
+                message << "MultijetBinnedSum::MultijetBinnedSum: Directory \"" <<
+                  key->GetName() << "\" in file \"" << fileName <<
+                  "\" does not contain required key \"" << name << "\".";
                 throw std::runtime_error(message.str());
             }
         }
@@ -105,7 +106,8 @@ Multijet::Multijet(std::string const &fileName, Multijet::Method method_):
     if (triggerBins.empty())
     {
         std::ostringstream message;
-        message << "Multijet::Multijet: No data read from file \"" << fileName << "\".";
+        message << "MultijetBinnedSum::MultijetBinnedSum: No data read from file \"" <<
+          fileName << "\".";
         throw std::runtime_error(message.str());
     }
     
@@ -148,13 +150,14 @@ Multijet::Multijet(std::string const &fileName, Multijet::Method method_):
 }
 
 
-unsigned Multijet::GetDim() const
+unsigned MultijetBinnedSum::GetDim() const
 {
     return dimensionality;
 }
 
 
-TH1D Multijet::GetRecompBalance(JetCorrBase const &corrector, Nuisances const &nuisances) const
+TH1D MultijetBinnedSum::GetRecompBalance(JetCorrBase const &corrector, Nuisances const &nuisances)
+  const
 {
     // An auxiliary structure to aggregate information about a single bin. Consists of the lower
     //bin edge, bin content, and its uncertainty.
@@ -215,7 +218,7 @@ TH1D Multijet::GetRecompBalance(JetCorrBase const &corrector, Nuisances const &n
 }
 
 
-double Multijet::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
+double MultijetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     UpdateBalance(corrector, nuisances);
     double chi2 = 0.;
@@ -234,7 +237,7 @@ double Multijet::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) 
 }
 
 
-double Multijet::ComputeMPF(TriggerBin const &triggerBin, FracBin const &ptLeadStart,
+double MultijetBinnedSum::ComputeMPF(TriggerBin const &triggerBin, FracBin const &ptLeadStart,
   FracBin const &ptLeadEnd, FracBin const &ptJetStart, JetCorrBase const &corrector)
 {
     double sumBal = 0., sumWeight = 0.;
@@ -288,7 +291,7 @@ double Multijet::ComputeMPF(TriggerBin const &triggerBin, FracBin const &ptLeadS
 }
 
 
-double Multijet::ComputePtBal(TriggerBin const &triggerBin, FracBin const &ptLeadStart,
+double MultijetBinnedSum::ComputePtBal(TriggerBin const &triggerBin, FracBin const &ptLeadStart,
   FracBin const &ptLeadEnd, FracBin const &ptJetStart, JetCorrBase const &corrector)
 {
     double sumBal = 0., sumWeight = 0.;
@@ -340,15 +343,16 @@ double Multijet::ComputePtBal(TriggerBin const &triggerBin, FracBin const &ptLea
 }
 
 
-void Multijet::UpdateBalance(JetCorrBase const &corrector, Nuisances const &) const
+void MultijetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances const &) const
 {
     double minPtUncorr = corrector.UndoCorr(minPt);
     
     if (triggerBins.front().ptJetSumProj->GetYaxis()->FindFixBin(minPtUncorr) == 0)
     {
         std::ostringstream message;
-        message << "Multijet::UpdateBalance: With the current correction jet threshold (" <<
-          minPt << " -> " << minPtUncorr << " GeV) falls in the underflow bin.";
+        message << "MultijetBinnedSum::UpdateBalance: With the current correction " <<
+          "jet threshold (" << minPt << " -> " << minPtUncorr <<
+          " GeV) falls in the underflow bin.";
         throw std::runtime_error(message.str());
     }
     
