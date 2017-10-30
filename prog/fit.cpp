@@ -5,6 +5,7 @@
 #include <JetCorrDefinitions.hpp>
 #include <FitBase.hpp>
 #include <PhotonJet.hpp>
+#include <ZJet.hpp>
 #include <Multijet.hpp>
 
 #include <Minuit2/Minuit2Minimizer.h>
@@ -24,17 +25,17 @@ int main(int argc, char **argv)
     
     
     // Parse arguments
-    if (argc < 3 or argc > 4)
+    if (argc < 4 or argc > 5)
     {
-        cerr << "Usage: fit inputPhotonJet.root inputMultijet.root [method]\n";
+        cerr << "Usage: fit inputPhotonJet.root inputMultijet.root inputZJet.root [method]\n";
         return EXIT_FAILURE;
     }
     
     bool useMPF = false;
     
-    if (argc >= 4)
+    if (argc >= 5)
     {
-        string const methodLabel(argv[3]);
+        string const methodLabel(argv[4]);
         
         if (methodLabel == "MPF")
             useMPF = true;
@@ -58,7 +59,9 @@ int main(int argc, char **argv)
       (useMPF) ? Multijet::Method::MPF : Multijet::Method::PtBal);
     lossFunc.AddMeasurement(&measurementMultijet);
     
-    
+    ZJet measurementZJet(argv[3],
+      (useMPF) ? ZJet::Method::MPF : ZJet::Method::PtBal);
+    lossFunc.AddMeasurement(&measurementZJet);
     
     unsigned const nPars = lossFunc.GetNumParams();
     
