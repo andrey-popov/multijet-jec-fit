@@ -27,7 +27,7 @@ struct FracBin;
  * [1] https://indico.cern.ch/event/646599/#50-on-the-way-to-an-updated-mu
  * [2] https://indico.cern.ch/event/656050/#65-comparison-of-different-app
  */
-class MultijetBinnedSum: public DeviationBase
+class MultijetBinnedSum: public MeasurementBase
 {
 public:
     /// Supported methods of computation
@@ -92,7 +92,7 @@ public:
     /**
      * \brief Returns dimensionality of the deviation
      * 
-     * Implemented from DeviationBase.
+     * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
     
@@ -106,7 +106,7 @@ public:
     /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances
      * 
-     * Implemented from DeviationBase.
+     * Implemented from MeasurementBase.
      */
     virtual double Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const override;
     

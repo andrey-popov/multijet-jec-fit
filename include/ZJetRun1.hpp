@@ -15,7 +15,7 @@
  * sigma_i is the statistical uncertainty on the ratio. The mean balance observables are
  * extrapolated to alpha = 0.
  */
-class ZJetRun1: public DeviationBase
+class ZJetRun1: public MeasurementBase
 {
 public:
     /// Supported methods of computation
@@ -47,14 +47,14 @@ public:
     /**
      * \brief Returns dimensionality of the deviation
      * 
-     * Implemented from DeviationBase.
+     * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
     
     /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances
      * 
-     * Implemented from DeviationBase.
+     * Implemented from MeasurementBase.
      */
     virtual double Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const override;
     

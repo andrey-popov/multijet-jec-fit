@@ -63,14 +63,15 @@ protected:
 
 
 /**
- * \class DeviationBase
- * \brief Base class to quantify deviation of observed data from expectation
+ * \class MeasurementBase
+ * \brief Base class to describe an analysis
  * 
- * The deviation of data (with a hypothesized jet correction applied) from expectation is intended
- * to be used to construct the loss function to fit the jet correction. A derived class should
- * implement computation of the deviation in a single analysis.
+ * For the purpose of determination of the jet correction, an analysis is represented by a
+ * deviation of data (with a hypothesized jet correction applied) from expectation, which is
+ * intended to be used to construct the loss function for the fit. A derived class should implement
+ * computation of the deviation in a single analysis.
  */
-class DeviationBase
+class MeasurementBase
 {
 public:
     /**
@@ -122,7 +123,7 @@ public:
      * 
      * Provided object is not owned by this.
      */
-    void AddMeasurement(DeviationBase const *measurement);
+    void AddMeasurement(MeasurementBase const *measurement);
     
     /**
      * \brief Returns the number of parameters to be fitted
@@ -182,5 +183,5 @@ protected:
     mutable Nuisances nuisances;
     
     /// Non-owning pointers to individual contributing measurements
-    std::vector<DeviationBase const *> measurements;
+    std::vector<MeasurementBase const *> measurements;
 };

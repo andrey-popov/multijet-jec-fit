@@ -83,7 +83,7 @@ CombLossFunction::CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector_):
 {}
 
 
-void CombLossFunction::AddMeasurement(DeviationBase const *measurement)
+void CombLossFunction::AddMeasurement(MeasurementBase const *measurement)
 {
     measurements.emplace_back(measurement);
 }
