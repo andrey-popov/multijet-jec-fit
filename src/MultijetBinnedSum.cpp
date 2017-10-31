@@ -30,12 +30,13 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
         methodLabel = "MPF";
     
     
-    TFile inputFile(fileName.c_str());
+    std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile.IsZombie())
+    if (inputFile->IsZombie())
     {
         std::ostringstream message;
-        message << "Failed to open file \"" << fileName << "\".";
+        message << "MultijetBinnedSum::MultijetBinnedSum: Failed to open file \"" <<
+          fileName << "\".";
         throw std::runtime_error(message.str());
     }
     
@@ -45,12 +46,13 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
     //balance observable in simulation (while in data it can be recomputed for any not too low
     //threshold). In the case of the MPF method the definition of the balance observable in both
     //data and simulation is affected.
-    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile.Get(("MinPt"s + methodLabel).c_str()));
+    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile->Get(("MinPt"s + methodLabel).c_str()));
     
     if (not ptThreshold or ptThreshold->GetNoElements() != 1)
     {
         std::ostringstream message;
-        message << "Failed to read jet pt threshold from file \"" << fileName << "\".";
+        message << "MultijetBinnedSum::MultijetBinnedSum: Failed to read jet pt threshold " <<
+          "from file \"" << fileName << "\".";
         throw std::runtime_error(message.str());
     }
     
@@ -58,7 +60,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
     
     
     // Loop over directories in the input file
-    TIter fileIter(inputFile.GetListOfKeys());
+    TIter fileIter(inputFile->GetListOfKeys());
     TKey *key;
     
     while ((key = dynamic_cast<TKey *>(fileIter())))
@@ -101,7 +103,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
         triggerBins.emplace_back(std::move(bin));
     }
     
-    inputFile.Close();
+    inputFile->Close();
     
     if (triggerBins.empty())
     {

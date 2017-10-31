@@ -18,19 +18,19 @@ PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method)
     else if (method == Method::MPF)
         methodLabel = "MPF";
     
-    TFile inputFile(fileName.c_str());
+    std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile.IsZombie())
+    if (inputFile->IsZombie())
     {
         std::ostringstream message;
-        message << "Failed to open file \"" << fileName << "\".";
+        message << "PhotonJetRun1::PhotonJetRun1: Failed to open file \"" << fileName << "\".";
         throw std::runtime_error(message.str());
     }
     
     std::unique_ptr<TGraphErrors> extrapRatio(dynamic_cast<TGraphErrors *>(
-      inputFile.Get(("resp_"s + methodLabel + "chs_extrap_a30_eta00_13").c_str())));
+      inputFile->Get(("resp_"s + methodLabel + "chs_extrap_a30_eta00_13").c_str())));
     
-    inputFile.Close();
+    inputFile->Close();
     
     
     bins.reserve(extrapRatio->GetN());

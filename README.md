@@ -13,7 +13,7 @@ To build the package and run an example fit program, execute
 ```bash
 cmake .
 make
-bin/fit /gridgroup/cms/lattaudhugues/JEC_global_fit_code/jec-fit-prototype/PhotonJetPlots_RunH_03Feb17_extrap_reminiaod_runH_vs_MC_extrap_reminiaod_runH_PFlowAK4chs_LUMI/vs_pt/plots.root /gridgroup/cms/popov/Analyses/JetMET/2017.09.07_New-method-real-setup/UpdatedInputs/multijet_Run2016H.root /gridgroup/cms/viola/GlobalFit/input/response_vs_zpt_extrapolated.root
-# Or, if you are trying the new photon+jet method
-bin/fit /gridgroup/cms/viola/GlobalFit/input/PhotonJet_NewMethod.root /gridgroup/cms/popov/Analyses/JetMET/2017.09.07_New-method-real-setup/UpdatedInputs/multijet_Run2016H.root /gridgroup/cms/viola/GlobalFit/input/response_vs_zpt_extrapolated.root
+inputdir="https://aapopov.web.cern.ch/aapopov/jec_inputs/prototype"
+bin/fit $inputdir/photonjet_Run1.root $inputdir/multijet_BinnedSum.root $inputdir/Zjet_Run1.root
+# The input file for the binned sum version of photon+jet is called photonjet_BinnedSum.root
 ```

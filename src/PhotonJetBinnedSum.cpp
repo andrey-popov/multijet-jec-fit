@@ -25,9 +25,9 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName, Method metho
     else if (method == Method::MPF)
         methodLabel = "MPF";
     
-    TFile inputFile(fileName.c_str());
+    std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile.IsZombie())
+    if (inputFile->IsZombie())
     {
         std::ostringstream message;
         message << "PhotonJetBinnedSum:: PhotonJetBinnedSum: Failed to open file \"" <<
@@ -36,14 +36,14 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName, Method metho
     }
     
     
-    simBalProfile.reset(dynamic_cast<TProfile *>(inputFile.Get(
+    simBalProfile.reset(dynamic_cast<TProfile *>(inputFile->Get(
       ("MC_new"s + methodLabel + "_vs_ptphoton").c_str())));
-    balProfile.reset(dynamic_cast<TProfile *>(inputFile.Get(
+    balProfile.reset(dynamic_cast<TProfile *>(inputFile->Get(
       ("DATA_new"s + methodLabel + "_vs_ptphoton").c_str())));
-    ptPhoton.reset(dynamic_cast<TH1 *>(inputFile.Get("DATA_phopt_for_nevts")));
-    ptPhotonProfile.reset(dynamic_cast<TProfile *>(inputFile.Get("DATA_ptphoton_vs_ptphoton")));
-    ptJetSumProj.reset(dynamic_cast<TH2 *>(inputFile.Get("DATA_Skl_phopt_vs_jetpt")));
-    ptJet2DProfile.reset(dynamic_cast<TProfile2D *>(inputFile.Get("DATA_jetpt_phopt_vs_jetpt")));
+    ptPhoton.reset(dynamic_cast<TH1 *>(inputFile->Get("DATA_phopt_for_nevts")));
+    ptPhotonProfile.reset(dynamic_cast<TProfile *>(inputFile->Get("DATA_ptphoton_vs_ptphoton")));
+    ptJetSumProj.reset(dynamic_cast<TH2 *>(inputFile->Get("DATA_Skl_phopt_vs_jetpt")));
+    ptJet2DProfile.reset(dynamic_cast<TProfile2D *>(inputFile->Get("DATA_jetpt_phopt_vs_jetpt")));
 
     simBalProfile->SetDirectory(nullptr);
     balProfile->SetDirectory(nullptr);
@@ -52,7 +52,7 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName, Method metho
     ptJetSumProj->SetDirectory(nullptr);
     ptJet2DProfile->SetDirectory(nullptr);
     
-    inputFile.Close();
+    inputFile->Close();
     
     
     for (int i = 1; i <= simBalProfile->GetNbinsX(); ++i)

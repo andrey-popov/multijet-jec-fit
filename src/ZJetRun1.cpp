@@ -18,20 +18,20 @@ ZJetRun1::ZJetRun1(std::string const &fileName, Method method)
     else if (method == Method::MPF)
         methodLabel = "mpf";
     
-    TFile inputFile(fileName.c_str());
+    std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile.IsZombie())
+    if (inputFile->IsZombie())
     {
         std::ostringstream message;
-        message << "Failed to open file \"" << fileName << "\".";
+        message << "ZJetRun1::ZJetRun1: Failed to open file \"" << fileName << "\".";
         throw std::runtime_error(message.str());
     }
     
     std::unique_ptr<TH1D> extrapRatioZ(dynamic_cast<TH1D *>(
-      inputFile.Get((methodLabel + "_Ratio_eta_0-13_zpt_30-Inf_alpha_0_L1L2L3").c_str())));
+      inputFile->Get((methodLabel + "_Ratio_eta_0-13_zpt_30-Inf_alpha_0_L1L2L3").c_str())));
 
     extrapRatioZ->SetDirectory(nullptr);
-    inputFile.Close();
+    inputFile->Close();
   
   
     bins.reserve(extrapRatioZ->GetNbinsX());
