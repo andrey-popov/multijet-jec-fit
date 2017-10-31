@@ -23,6 +23,9 @@ endforeach(src)
 find_package(ROOT REQUIRED COMPONENTS Minuit2)
 include_directories(${ROOT_INCLUDE_DIRS})
 
+find_package(Boost 1.34.0 REQUIRED COMPONENTS program_options)
+include_directories(${Boost_INCLUDE_DIR})
+
 
 # Main library
 add_library(jecfit SHARED ${LIBRARY_SOURCES})
@@ -30,7 +33,7 @@ target_link_libraries(jecfit ${ROOT_LIBRARIES})
 
 # Main program
 add_executable(fit "prog/fit.cpp")
-target_link_libraries(fit jecfit ${ROOT_LIBRARIES})
+target_link_libraries(fit jecfit ${ROOT_LIBRARIES} ${Boost_LIBRARIES})
 
 
 # Tests
