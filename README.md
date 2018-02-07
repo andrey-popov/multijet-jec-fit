@@ -12,8 +12,11 @@ Dependencies:
 
 To build the package and run an example fit program, execute
 ```bash
-cmake .
+cd build
+cmake ..
 make
+cd ..
+
 inputdir="https://aapopov.web.cern.ch/aapopov/jec_inputs/prototype"
 bin/fit --photonjet-run1 $inputdir/photonjet_Run1.root --multijet-binnedsum $inputdir/multijet_BinnedSum.root --zjet-run1 $inputdir/Zjet_Run1.root
 # An input file for the binned-sum version of the photon+jet analysis is also available and called "photonjet_BinnedSum.root"
