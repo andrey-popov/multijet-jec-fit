@@ -32,7 +32,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
     
     std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile->IsZombie())
+    if (not inputFile or inputFile->IsZombie())
     {
         std::ostringstream message;
         message << "MultijetBinnedSum::MultijetBinnedSum: Failed to open file \"" <<
@@ -127,14 +127,14 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
         // Compute combined (squared) uncertainty on the balance observable in data and simulation.
         //The data profile is rebinned with the binning used for simulation. This is done assuming
         //that bin edges of the two binnings are aligned, which should normally be the case.
-        TProfile *balProfileRebinned = dynamic_cast<TProfile *>(bin.balProfile->Rebin(
+        std::unique_ptr<TH1> balRebinned(bin.balProfile->Rebin(
           bin.simBalProfile->GetNbinsX(), "",
           bin.simBalProfile->GetXaxis()->GetXbins()->GetArray()));
         
         for (int i = 1; i <= bin.simBalProfile->GetNbinsX() + 1; ++i)
         {
             double const unc2 = std::pow(bin.simBalProfile->GetBinError(i), 2) +
-              std::pow(balProfileRebinned->GetBinError(i), 2);
+              std::pow(balRebinned->GetBinError(i), 2);
             bin.totalUnc2.emplace_back(unc2);
         }
         

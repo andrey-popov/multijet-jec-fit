@@ -20,7 +20,7 @@ PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method)
     
     std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile->IsZombie())
+    if (not inputFile or inputFile->IsZombie())
     {
         std::ostringstream message;
         message << "PhotonJetRun1::PhotonJetRun1: Failed to open file \"" << fileName << "\".";

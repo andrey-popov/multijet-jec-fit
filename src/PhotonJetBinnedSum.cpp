@@ -24,7 +24,7 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
     
     std::unique_ptr<TFile> inputFile(TFile::Open(fileName.c_str()));
     
-    if (inputFile->IsZombie())
+    if (not inputFile or inputFile->IsZombie())
     {
         std::ostringstream message;
         message << "PhotonJetBinnedSum:: PhotonJetBinnedSum: Failed to open file \"" <<
@@ -53,14 +53,16 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
     inputFile->Close();
     
     
-    TProfile *balProfileRebinned = dynamic_cast<TProfile *>(
-      balProfile->Rebin(simBalProfile->GetNbinsX(), "",
+    // Compute combined (squared) uncertainty on the balance observable in data and simulation.
+    //The data profile is rebinned with the binning used for simulation. This is done assuming that
+    //bin edges of the two binnings are aligned, which should normally be the case.
+    std::unique_ptr<TH1> balRebinned(balProfile->Rebin(simBalProfile->GetNbinsX(), "",
       simBalProfile->GetXaxis()->GetXbins()->GetArray()));
     
     for (int i = 1; i <= simBalProfile->GetNbinsX(); ++i)
     {
         double const unc2 = std::pow(simBalProfile->GetBinError(i), 2) +
-          std::pow(balProfileRebinned->GetBinError(i), 2);
+          std::pow(balRebinned->GetBinError(i), 2);
         totalUnc2.emplace_back(unc2);
     }
     
