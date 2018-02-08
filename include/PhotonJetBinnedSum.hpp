@@ -9,6 +9,7 @@
 
 #include <vector>
 
+struct FracBin;
 
 /**
  * \class PhotonJetBinnedSum
@@ -52,6 +53,15 @@ public:
     virtual double Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const override;
     
 private:
+    /// Recomputes MPF in data for given photon pt bin, 2D pt window, and jet correction
+    double ComputeMPF(FracBin const &ptPhotonStart, FracBin const &ptPhotonEnd, JetCorrBase const &corrector, Nuisances const &nuisances) const;
+
+    /// Recomputes PtBal in data for given photon pt bin, 2D pt window, and jet correction
+    double ComputePtBal(FracBin const &ptPhotonStart, FracBin const &ptPhotonEnd, JetCorrBase const &corrector, Nuisances const &nuisances) const;
+
+    /// Recomputes mean balance observable in all photon pt bins for the given jet correction  
+    void UpdateBalance(JetCorrBase const &corrector, Nuisances const &nuisances) const;
+
     /// Profiles of the balance observable in data and simulation
     std::unique_ptr<TProfile> balProfile, simBalProfile;
     
@@ -72,4 +82,15 @@ private:
      * and simulation
      */
     std::vector<double> totalUnc2;
+
+    /**
+    * \brief Recomputed mean balance observable in data
+    * Computed in the binning of simBalProfile.
+    */
+
+    mutable std::vector<double> recompBal;
+
+    /// Method of computation
+    Method method;
+
 };
