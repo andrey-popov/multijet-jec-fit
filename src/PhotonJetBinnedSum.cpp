@@ -7,9 +7,6 @@
 #include <TFile.h>
 
 
-using namespace std::string_literals;
-
-
 PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
   PhotonJetBinnedSum::Method method_):
     method(method_)
@@ -34,9 +31,9 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
     
     
     simBalProfile.reset(dynamic_cast<TProfile *>(inputFile->Get(
-      ("MC_new"s + methodLabel + "_vs_ptphoton").c_str())));
+      ("MC_new" + methodLabel + "_vs_ptphoton").c_str())));
     balProfile.reset(dynamic_cast<TProfile *>(inputFile->Get(
-      ("DATA_new"s + methodLabel + "_vs_ptphoton").c_str())));
+      ("DATA_new" + methodLabel + "_vs_ptphoton").c_str())));
     ptPhoton.reset(dynamic_cast<TH1 *>(inputFile->Get("DATA_phopt_for_nevts")));
     ptPhotonProfile.reset(dynamic_cast<TProfile *>(inputFile->Get("DATA_ptphoton_vs_ptphoton")));
     ptJetSumProj.reset(dynamic_cast<TH2 *>(inputFile->Get("DATA_Skl_phopt_vs_jetpt")));

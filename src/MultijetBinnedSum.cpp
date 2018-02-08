@@ -15,9 +15,6 @@
 #include <utility>
 
 
-using namespace std::string_literals;
-
-
 MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
   MultijetBinnedSum::Method method_):
     method(method_)
@@ -46,7 +43,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
     //balance observable in simulation (while in data it can be recomputed for any not too low
     //threshold). In the case of the MPF method the definition of the balance observable in both
     //data and simulation is affected.
-    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile->Get(("MinPt"s + methodLabel).c_str()));
+    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile->Get(("MinPt" + methodLabel).c_str()));
     
     if (not ptThreshold or ptThreshold->GetNoElements() != 1)
     {
@@ -70,7 +67,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
         
         TDirectoryFile *directory = dynamic_cast<TDirectoryFile *>(key->ReadObj());
         
-        for (auto const &name: std::initializer_list<std::string>{"Sim"s + methodLabel + "Profile",
+        for (auto const &name: std::initializer_list<std::string>{"Sim" + methodLabel + "Profile",
           "PtLead", "PtLeadProfile", methodLabel + "Profile", "PtJetSumProj"})
         {
             if (not directory->Get(name.c_str()))
@@ -87,7 +84,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
         TriggerBin bin;
         
         bin.simBalProfile.reset(dynamic_cast<TProfile *>(
-          directory->Get(("Sim"s + methodLabel + "Profile").c_str())));
+          directory->Get(("Sim" + methodLabel + "Profile").c_str())));
         bin.balProfile.reset(dynamic_cast<TProfile *>(
           directory->Get((methodLabel + "Profile").c_str())));
         bin.ptLead.reset(dynamic_cast<TH1 *>(directory->Get("PtLead")));

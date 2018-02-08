@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     
     // Initial point
     for (unsigned i = 0; i < nPars; ++i)
-        minimizer.SetVariable(i, "p"s + to_string(i), 0., 1e-2);
+        minimizer.SetVariable(i, "p" + to_string(i), 0., 1e-2);
     
     
     // Run minimization
