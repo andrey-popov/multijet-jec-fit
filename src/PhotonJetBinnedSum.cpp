@@ -24,7 +24,7 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
     if (not inputFile or inputFile->IsZombie())
     {
         std::ostringstream message;
-        message << "PhotonJetBinnedSum:: PhotonJetBinnedSum: Failed to open file \"" <<
+        message << "PhotonJetBinnedSum::PhotonJetBinnedSum: Failed to open file \"" <<
           fileName << "\".";
         throw std::runtime_error(message.str());
     }
@@ -90,48 +90,67 @@ double PhotonJetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &n
 }
 
 
-void PhotonJetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances const &nuisances)
-  const
+double PhotonJetBinnedSum::ComputeMPF(FracBin const &ptPhotonStart, FracBin const &ptPhotonEnd,
+  JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
-    std::vector<double> simPtBinning;
-    std::vector<double> dataPtBinning;
+    // Minimum pt
+    double const jetPtMin = 15.;
     
-    for (int i = 1; i <= simBalProfile->GetNbinsX() + 1; ++i)
+    
+    // Find the bin in jet pt that includes the value of pt that, after the current correction,
+    // would give the nominal minimal pt threshold. Compute also the fraction of this bin that
+    // should included in the sum.
+    TAxis const *ptJetAxis = ptJetSumProj->GetYaxis();
+    double const uncorrJetPtMin = corrector.UndoCorr(jetPtMin);
+    int const startBin = ptJetAxis->FindBin(uncorrJetPtMin);
+    double const fracStartBin = 1. - (uncorrJetPtMin - ptJetAxis->GetBinLowEdge(startBin)) /
+      ptJetAxis->GetBinWidth(startBin);
+    
+    
+    double sumBal = 0., sumWeight = 0.,  sumJets = 0.;
+    
+    for (unsigned photonBinIndex = ptPhotonStart.index; photonBinIndex <= ptPhotonEnd.index;
+      ++photonBinIndex)
     {
-        double const pt = simBalProfile->GetBinLowEdge(i);
-        simPtBinning.emplace_back(pt);
+        double const numEvents = ptPhoton->GetBinContent(photonBinIndex);
+        
+        if (numEvents == 0)
+            continue;
+        
+        double const meanPhotonPt = ptPhotonProfile->GetBinContent(photonBinIndex) *
+          (1 + nuisances.photonScale);
+        
+        
+        // Recompute mean value for the MPF observable in data by summing over all jet pt bins
+        sumBal += balProfile->GetBinContent(photonBinIndex) * numEvents ;
+        sumWeight += numEvents ;
+        
+        sumJets = 0.;
+        
+        for (int jetBinIndex = startBin; jetBinIndex <= ptJetSumProj->GetNbinsY(); ++jetBinIndex)
+        {
+            double const s = ptJetSumProj->GetBinContent(photonBinIndex, jetBinIndex);
+            
+            if (s == 0.)
+                continue;
+            
+            double const meanJetPt = ptJet2DProfile->GetBinContent(photonBinIndex, jetBinIndex);
+            
+            if (jetBinIndex == startBin)
+                sumJets -= s * (1. - corrector.Eval(meanJetPt)) * fracStartBin;
+            else
+                sumJets -= s * (1. - corrector.Eval(meanJetPt));
+        }
+        
+        sumJets /= meanPhotonPt;
+        sumBal += sumJets;
     }
     
-    for (int i = 1; i <= balProfile->GetNbinsX() + 1; ++i)
-    {
-        double const pt = balProfile->GetBinLowEdge(i);
-        dataPtBinning.emplace_back(pt);
-    }
-    
-    
-    // Build a map from the simulation (wide) binning to the fine binning used in data
-    auto binMap = mapBinning(dataPtBinning, simPtBinning);
-    binMap.erase(0);
-    binMap.erase(simBalProfile->GetNbinsX() + 1);
-    
-    for (auto const &binMapPair: binMap)
-    {
-        auto const &binIndex = binMapPair.first;
-        auto const &binRange = binMapPair.second;
-        
-        double meanBal;
-        
-        if (method == Method::PtBal)
-            meanBal = ComputePtBal(binRange[0], binRange[1], corrector, nuisances);
-        else
-            meanBal = ComputeMPF(binRange[0], binRange[1], corrector, nuisances);
-        
-        recompBal[binIndex - 1] = meanBal;
-    }
+    return sumBal / sumWeight;
 }
 
 
-double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart,  FracBin const &ptPhotonEnd,
+double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart, FracBin const &ptPhotonEnd,
  JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     // Minimum pt
@@ -190,61 +209,42 @@ double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart,  FracBin c
 }
 
 
-double PhotonJetBinnedSum::ComputeMPF(FracBin const &ptPhotonStart,  FracBin const &ptPhotonEnd,
-  JetCorrBase const &corrector, Nuisances const &nuisances) const
+void PhotonJetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances const &nuisances)
+  const
 {
-    // Minimum pt
-    double const jetPtMin = 15.;
+    std::vector<double> simPtBinning;
+    std::vector<double> dataPtBinning;
     
-    
-    // Find the bin in jet pt that includes the value of pt that, after the current correction,
-    // would give the nominal minimal pt threshold. Compute also the fraction of this bin that
-    // should included in the sum.
-    TAxis const *ptJetAxis = ptJetSumProj->GetYaxis();
-    double const uncorrJetPtMin = corrector.UndoCorr(jetPtMin);
-    int const startBin = ptJetAxis->FindBin(uncorrJetPtMin);
-    double const fracStartBin = 1. - (uncorrJetPtMin - ptJetAxis->GetBinLowEdge(startBin)) /
-      ptJetAxis->GetBinWidth(startBin);
-    
-    
-    double sumBal = 0., sumWeight = 0.,  sumJets = 0.;
-    
-    for (unsigned photonBinIndex = ptPhotonStart.index; photonBinIndex <= ptPhotonEnd.index;
-      ++photonBinIndex)
+    for (int i = 1; i <= simBalProfile->GetNbinsX() + 1; ++i)
     {
-        double const numEvents = ptPhoton->GetBinContent(photonBinIndex);
-        
-        if (numEvents == 0)
-            continue;
-        
-        double const meanPhotonPt = ptPhotonProfile->GetBinContent(photonBinIndex) *
-          (1 + nuisances.photonScale);
-        
-        
-        // Recompute mean value for the MPF observable in data by summing over all jet pt bins
-        sumBal += balProfile->GetBinContent(photonBinIndex) * numEvents ;
-        sumWeight += numEvents ;
-        
-        sumJets = 0.;
-        
-        for (int jetBinIndex = startBin; jetBinIndex <= ptJetSumProj->GetNbinsY(); ++jetBinIndex)
-        {
-            double const s = ptJetSumProj->GetBinContent(photonBinIndex, jetBinIndex);
-            
-            if (s == 0.)
-                continue;
-            
-            double const meanJetPt = ptJet2DProfile->GetBinContent(photonBinIndex, jetBinIndex);
-            
-            if (jetBinIndex == startBin)
-                sumJets -= s * (1. - corrector.Eval(meanJetPt)) * fracStartBin;
-            else
-                sumJets -= s * (1. - corrector.Eval(meanJetPt));
-        }
-        
-        sumJets /= meanPhotonPt;
-        sumBal += sumJets;
+        double const pt = simBalProfile->GetBinLowEdge(i);
+        simPtBinning.emplace_back(pt);
     }
     
-    return sumBal / sumWeight;
+    for (int i = 1; i <= balProfile->GetNbinsX() + 1; ++i)
+    {
+        double const pt = balProfile->GetBinLowEdge(i);
+        dataPtBinning.emplace_back(pt);
+    }
+    
+    
+    // Build a map from the simulation (wide) binning to the fine binning used in data
+    auto binMap = mapBinning(dataPtBinning, simPtBinning);
+    binMap.erase(0);
+    binMap.erase(simBalProfile->GetNbinsX() + 1);
+    
+    for (auto const &binMapPair: binMap)
+    {
+        auto const &binIndex = binMapPair.first;
+        auto const &binRange = binMapPair.second;
+        
+        double meanBal;
+        
+        if (method == Method::PtBal)
+            meanBal = ComputePtBal(binRange[0], binRange[1], corrector, nuisances);
+        else
+            meanBal = ComputeMPF(binRange[0], binRange[1], corrector, nuisances);
+        
+        recompBal[binIndex - 1] = meanBal;
+    }
 }
