@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <memory>
+#include <sstream>
 
 #include <TFile.h>
 #include <TH1.h>
