@@ -15,10 +15,6 @@ include_directories(${ROOT_INCLUDE_DIRS})
 find_package(Boost 1.34.0 REQUIRED COMPONENTS program_options)
 include_directories(${Boost_INCLUDE_DIR})
 
-if(APPLE)
-set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
-endif(APPLE)
-
 add_subdirectory(src)
 add_subdirectory(prog)
 add_subdirectory(tests)
