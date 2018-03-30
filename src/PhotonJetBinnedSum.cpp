@@ -4,6 +4,7 @@
 #include <cmath>
 #include <memory>
 #include <sstream>
+#include <TVectorD.h>
 
 #include <TFile.h>
 
@@ -30,7 +31,18 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
         throw std::runtime_error(message.str());
     }
     
-    
+    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile->Get(("MC_MinPt" + methodLabel).c_str()));
+
+    if (not ptThreshold or ptThreshold->GetNoElements() != 1)
+     {
+        std::ostringstream message;
+        message << "PhotonJetBinnedSum::PhotonJetBinnedSum: Failed to read jet pt threshold " <<
+           "from file \"" << fileName << "\".";
+        throw std::runtime_error(message.str());
+      }
+
+    jetPtMin = (*ptThreshold)[1];
+  
     simBalProfile.reset(dynamic_cast<TProfile *>(inputFile->Get(
       ("MC_new" + methodLabel + "_vs_ptphoton").c_str())));
     balProfile.reset(dynamic_cast<TProfile *>(inputFile->Get(
@@ -94,9 +106,6 @@ double PhotonJetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &n
 double PhotonJetBinnedSum::ComputeMPF(FracBin const &ptPhotonStart, FracBin const &ptPhotonEnd,
   JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
-    // Minimum pt
-    double const jetPtMin = 15.;
-    
     
     // Find the bin in jet pt that includes the value of pt that, after the current correction,
     // would give the nominal minimal pt threshold. Compute also the fraction of this bin that
@@ -154,9 +163,6 @@ double PhotonJetBinnedSum::ComputeMPF(FracBin const &ptPhotonStart, FracBin cons
 double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart, FracBin const &ptPhotonEnd,
  JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
-    // Minimum pt
-    double const jetPtMin = 15.;
-    
     
     // Find the bin in jet pt that includes the value of pt that, after the current correction,
     // would give the nominal minimal pt threshold. Compute also the fraction of this bin that
@@ -208,7 +214,6 @@ double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart, FracBin co
     meanBal /= sumWeight;
     return meanBal;
 }
-
 
 void PhotonJetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances const &nuisances)
   const

@@ -86,7 +86,10 @@ private:
      * and simulation
      */
     std::vector<double> totalUnc2;
-    
+
+    //Jet pt threshold
+    double jetPtMin;
+
     /**
     * \brief Recomputed mean balance observable in data
     * 
