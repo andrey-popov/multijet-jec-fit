@@ -31,7 +31,7 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
         throw std::runtime_error(message.str());
     }
     
-    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile->Get(("MC_MinPt"s + methodLabel).c_str()));
+    auto ptThreshold = dynamic_cast<TVectorD *>(inputFile->Get(("MC_MinPt" + methodLabel).c_str()));
 
     if (not ptThreshold or ptThreshold->GetNoElements() != 1)
      {
