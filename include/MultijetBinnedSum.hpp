@@ -110,6 +110,18 @@ public:
      */
     virtual double Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const override;
     
+    /**
+     * \brief Selects a subrange of trigger bins to use
+     * 
+     * Only trigger bins whose (zero-based) indices are included in the range [begin, end) will be
+     * considered for the computation of the deviation. The last given index is not included in the
+     * range. It is optional, and if omitted, all trigger bins until the end will be used.
+     * 
+     * Normally all trigger bins should be considered. This method is intended for non-standard
+     * experiments with the fit.
+     */
+    void SetTriggerBinRange(unsigned begin, unsigned end = -1);
+    
 private:
     /// Recomputes MPF in data for given trigger bin, 2D pt window, and jet correction
     static double ComputeMPF(TriggerBin const &triggerBin, FracBin const &ptLeadStart,
@@ -128,6 +140,13 @@ private:
     
     /// Inputs for different trigger bins
     std::vector<TriggerBin> triggerBins;
+    
+    /**
+     * \brief Selected subrange of trigger bins
+     * 
+     * The first bin is included in the range, the last one is not.
+     */
+    unsigned selectedTriggerBinsBegin, selectedTriggerBinsEnd;
     
     /// Jet pt threshold
     double minPt;

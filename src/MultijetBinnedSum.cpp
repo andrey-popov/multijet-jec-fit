@@ -141,6 +141,11 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
     }
     
     
+    // Set the range of trigger bins to include all of them
+    selectedTriggerBinsBegin = 0;
+    selectedTriggerBinsEnd = triggerBins.size();
+    
+    
     // Precompute dimensionality. It is given by binning of simulation.
     dimensionality = 0;
     
@@ -173,8 +178,11 @@ TH1D MultijetBinnedSum::GetRecompBalance(JetCorrBase const &corrector, Nuisances
     
     double upperBoundary = -std::numeric_limits<double>::infinity();
     
-    for (auto const &triggerBin: triggerBins)
+    for (unsigned iTriggerBin = selectedTriggerBinsBegin; iTriggerBin < selectedTriggerBinsEnd;
+      ++iTriggerBin)
     {
+        auto const &triggerBin = triggerBins[iTriggerBin];
+        
         auto const &simBalProfile = triggerBin.simBalProfile;
         
         for (unsigned i = 0; i < triggerBin.recompBal.size(); ++i)
@@ -222,8 +230,11 @@ double MultijetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &nu
     UpdateBalance(corrector, nuisances);
     double chi2 = 0.;
     
-    for (auto const &triggerBin: triggerBins)
+    for (unsigned iTriggerBin = selectedTriggerBinsBegin; iTriggerBin < selectedTriggerBinsEnd;
+      ++iTriggerBin)
     {
+        auto const &triggerBin = triggerBins[iTriggerBin];
+        
         for (unsigned binIndex = 1; binIndex <= triggerBin.recompBal.size(); ++binIndex)
         {
             double const meanBal = triggerBin.recompBal[binIndex - 1];
@@ -233,6 +244,52 @@ double MultijetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &nu
     }
     
     return chi2;
+}
+
+
+void MultijetBinnedSum::SetTriggerBinRange(unsigned begin, unsigned end)
+{
+    unsigned const numTriggerBins = triggerBins.size();
+    
+    if (end == unsigned(-1))
+        end = numTriggerBins;
+    
+    
+    // Sanity checks
+    if (begin > numTriggerBins)
+    {
+        std::ostringstream message;
+        message << "MultijetBinnedSum::SetTriggerBinRange: Requested starting index " << begin <<
+          "is bigger than the number of available trigger bins " << numTriggerBins << ".";
+        throw std::runtime_error(message.str());
+    }
+    
+    if (end > numTriggerBins)
+    {
+        std::ostringstream message;
+        message << "MultijetBinnedSum::SetTriggerBinRange: Requested ending index " << end <<
+          "is bigger than the number of available trigger bins " << numTriggerBins << ".";
+        throw std::runtime_error(message.str());
+    }
+    
+    if (begin >= end)
+    {
+        std::ostringstream message;
+        message << "MultijetBinnedSum::SetTriggerBinRange: Range [" << begin << ", " << end <<
+          ") selects nothing.";
+        throw std::runtime_error(message.str());
+    }
+    
+    
+    selectedTriggerBinsBegin = begin;
+    selectedTriggerBinsEnd = end;
+    
+    
+    // Have to recompute cached dimensionality
+    dimensionality = 0;
+    
+    for (unsigned i = selectedTriggerBinsBegin; i < selectedTriggerBinsEnd; ++i)
+        dimensionality += triggerBins[i].simBalProfile->GetNbinsX();
 }
 
 
@@ -356,8 +413,11 @@ void MultijetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances co
     }
     
     
-    for (auto const &triggerBin: triggerBins)
+    for (unsigned iTriggerBin = selectedTriggerBinsBegin; iTriggerBin < selectedTriggerBinsEnd;
+      ++iTriggerBin)
     {
+        auto const &triggerBin = triggerBins[iTriggerBin];
+        
         // The binning in pt of the leading jet in the profile for simulation corresponds to
         //corrected jets. Translate it into a binning in uncorrected pt.
         std::vector<double> uncorrPtBinning;
