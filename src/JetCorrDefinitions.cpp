@@ -23,7 +23,7 @@ double JetCorrStableLogLin::Eval(double pt) const
 JetCorrStd2P::JetCorrStd2P():
     JetCorrBase(2),
     ptRef(208.),
-    paramsSPR({1.03091, -0.051154, -0.154227})  // Summer16_03Feb2017H_V3
+    paramsSPR({{1.03091, -0.051154, -0.154227}})  // Summer16_03Feb2017H_V3
 {}
 
 
@@ -56,7 +56,7 @@ double JetCorrStd2P::fSPR(double pt) const
 
 JetCorrStd3P::JetCorrStd3P():
     JetCorrStd2P(),
-    paramsL1({2.36997, -0.413917})  // Summer16_03Feb2017H_V3
+    paramsL1({{2.36997, -0.413917}})  // Summer16_03Feb2017H_V3
 {
     // Change the number of free parameters from two to three
     parameters.resize(3);

@@ -11,7 +11,7 @@ JetCorrBase::JetCorrBase(unsigned numParams):
 {}
 
 
-JetCorrBase::~JetCorrBase()
+JetCorrBase::~JetCorrBase() noexcept
 {}
 
 
