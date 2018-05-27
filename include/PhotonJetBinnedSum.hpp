@@ -7,6 +7,7 @@
 #include <TProfile.h>
 #include <TProfile2D.h>
 
+#include <set>
 #include <vector>
 
 struct FracBin;
@@ -45,6 +46,13 @@ public:
      * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
+    
+    /**
+     * \brief Returns names of nuisance parameters
+     * 
+     * Reimplemented from MeasurementBase.
+     */
+    virtual std::set<std::string> GetNuisances() const override;
     
     /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances
@@ -99,4 +107,12 @@ private:
     
     /// Method of computation
     Method method;
+    
+    /**
+     * \brief Size of the variation in the photon pt scale
+     * 
+     * This is the relative change in the pt scale when the value of the corresponding nuisance
+     * parameter is +1.
+     */
+    double photonScaleVar;
 };

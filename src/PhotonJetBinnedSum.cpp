@@ -11,7 +11,8 @@
 
 PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
   PhotonJetBinnedSum::Method method_):
-    method(method_)
+    method(method_),
+    photonScaleVar(0.01)  // a dummy value
 {
     std::string methodLabel;
     
@@ -87,6 +88,12 @@ unsigned PhotonJetBinnedSum::GetDim() const
 }
 
 
+std::set<std::string> PhotonJetBinnedSum::GetNuisances() const
+{
+    return std::set<std::string>{"PhotonScale"};
+}
+
+
 double PhotonJetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     UpdateBalance(corrector, nuisances);
@@ -118,6 +125,7 @@ double PhotonJetBinnedSum::ComputeMPF(FracBin const &ptPhotonStart, FracBin cons
     
     
     double sumBal = 0., sumWeight = 0.,  sumJets = 0.;
+    double const photonScaleFactor = 1 + photonScaleVar * nuisances["PhotonScale"];
     
     for (unsigned photonBinIndex = ptPhotonStart.index; photonBinIndex <= ptPhotonEnd.index;
       ++photonBinIndex)
@@ -127,8 +135,8 @@ double PhotonJetBinnedSum::ComputeMPF(FracBin const &ptPhotonStart, FracBin cons
         if (numEvents == 0)
             continue;
         
-        double const meanPhotonPt = ptPhotonProfile->GetBinContent(photonBinIndex) *
-          (1 + nuisances.photonScale);
+        double const meanPhotonPt =
+          ptPhotonProfile->GetBinContent(photonBinIndex) * photonScaleFactor;
         
         
         // Recompute mean value for the MPF observable in data by summing over all jet pt bins
@@ -174,6 +182,8 @@ double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart, FracBin co
       ptJetAxis->GetBinWidth(startBin);
     
     
+    double const photonScaleFactor = 1 + photonScaleVar * nuisances["PhotonScale"];
+    
     // Recompute mean value for the balance observable in data by summing over all jet pt bins
     double meanBal = 0.;
     double sumWeight = 0.;
@@ -189,8 +199,8 @@ double PhotonJetBinnedSum::ComputePtBal(FracBin const &ptPhotonStart, FracBin co
         sumWeight += numEvents;
         double meanBalInBin = 0.;
         
-        double const meanPhotonPt = ptPhotonProfile->GetBinContent(photonBinIndex) *
-          (1 + nuisances.photonScale);
+        double const meanPhotonPt =
+          ptPhotonProfile->GetBinContent(photonBinIndex) * photonScaleFactor;
         
         for (int jetBinIndex = startBin; jetBinIndex <= ptJetSumProj->GetNbinsY(); ++jetBinIndex)
         {

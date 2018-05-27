@@ -78,6 +78,12 @@ double JetCorrBase::UndoCorr(double pt, double tolerance) const
 }
 
 
+std::set<std::string> MeasurementBase::GetNuisances() const
+{
+    return std::set<std::string>();
+}
+
+
 CombLossFunction::CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector_):
     corrector(std::move(corrector_))
 {}
@@ -86,6 +92,9 @@ CombLossFunction::CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector_):
 void CombLossFunction::AddMeasurement(MeasurementBase const *measurement)
 {
     measurements.emplace_back(measurement);
+    
+    for (auto const &nuisance: measurement->GetNuisances())
+        nuisances.Register(nuisance);
 }
 
 
@@ -102,7 +111,19 @@ unsigned CombLossFunction::GetNDF() const
 
 unsigned CombLossFunction::GetNumParams() const
 {
-    return corrector->GetNumParams();
+    return corrector->GetNumParams() + nuisances.GetNumParams();
+}
+
+
+Nuisances const &CombLossFunction::GetNuisances() const
+{
+    return nuisances;
+}
+
+
+Nuisances &CombLossFunction::GetNuisances()
+{
+    return nuisances;
 }
 
 
@@ -124,12 +145,14 @@ double CombLossFunction::Eval(std::vector<double> const &corrParams, Nuisances c
   const
 {
     corrector->SetParams(corrParams);
-    SetExternalNuisances(nuisances_);
+    nuisances.SetValues(nuisances_);
     
     double loss = 0.;
     
     for (auto const &m: measurements)
         loss += m->Eval(*corrector, nuisances);
+    
+    loss += nuisances.Eval();
     
     return loss;
 }
@@ -137,21 +160,17 @@ double CombLossFunction::Eval(std::vector<double> const &corrParams, Nuisances c
 
 double CombLossFunction::EvalRawInput(double const *x) const
 {
-    // The input array starts from parameters of the jet correction. It would be followed by
-    //values of nuisances to be marginalized, but nuisances are not included in this
-    //implementation.
+    // The input array starts from parameters of the jet correction and then followed by values of
+    //nuisances
     corrector->SetParams(x);
+    nuisances.SetValues(x + corrector->GetNumParams());
     
     double loss = 0.;
     
     for (auto const &m: measurements)
         loss += m->Eval(*corrector, nuisances);
     
+    loss += nuisances.Eval();
+    
     return loss;
-}
-
-
-void CombLossFunction::SetExternalNuisances(Nuisances const &nuisances_) const
-{
-    nuisances = nuisances_;
 }

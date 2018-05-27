@@ -10,7 +10,8 @@
 using namespace std::string_literals;
 
 
-PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method)
+PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method):
+    photonScaleVar(0.01)  // a dummy value
 {
     std::string methodLabel;
     
@@ -57,6 +58,12 @@ unsigned PhotonJetRun1::GetDim() const
 }
 
 
+std::set<std::string> PhotonJetRun1::GetNuisances() const
+{
+    return std::set<std::string>{"PhotonScale"};
+}
+
+
 double PhotonJetRun1::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     double chi2 = 0.;
@@ -64,8 +71,9 @@ double PhotonJetRun1::Eval(JetCorrBase const &corrector, Nuisances const &nuisan
     for (auto const &bin: bins)
     {
         // Correct the balance ratio and photon pt for the potential offset in the photon pt scale
-        double const balanceRatioCorr = bin.balanceRatio / (1 + nuisances.photonScale);
-        double const ptPhoton = bin.ptPhoton * (1 + nuisances.photonScale);
+        double const photonScaleFactor = 1 + photonScaleVar * nuisances["PhotonScale"];
+        double const balanceRatioCorr = bin.balanceRatio / photonScaleFactor;
+        double const ptPhoton = bin.ptPhoton * photonScaleFactor;
         
         // Assume that pt of the jet is the same as pt of the photon
         chi2 += std::pow(balanceRatioCorr - 1 / corrector.Eval(ptPhoton), 2) / bin.unc2;

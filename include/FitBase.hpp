@@ -3,6 +3,7 @@
 #include <Nuisances.hpp>
 
 #include <memory>
+#include <set>
 #include <vector>
 
 
@@ -84,6 +85,13 @@ public:
     virtual unsigned GetDim() const = 0;
     
     /**
+     * \brief Returns names of nuisance parameters
+     * 
+     * In the default implementation, an empty set is returned.
+     */
+    virtual std::set<std::string> GetNuisances() const;
+    
+    /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances
      * 
      * To be implemented in a derived class.
@@ -126,21 +134,26 @@ public:
     void AddMeasurement(MeasurementBase const *measurement);
     
     /**
-     * \brief Returns the number of parameters to be fitted
-     * 
-     * Computed as the number of parameters of the jet correction plus the number of nuisances to
-     * be marginalized in the fit. In this implementation no marginalized nuisances are included,
-     * which can be changed in a derived class.
-     */
-    virtual unsigned GetNumParams() const;
-    
-    /**
      * \brief Returns the number of degrees of freedom
      * 
      * The number of degrees of freedom is computed as the sum of dimensionality of all included
      * deviations minus the number of parameters to be fitted.
      */
     unsigned GetNDF() const;
+    
+    /**
+     * \brief Returns the number of parameters to be fitted
+     * 
+     * Computed as the number of parameters of the jet correction plus the number of nuisances to
+     * be marginalized in the fit.
+     */
+    virtual unsigned GetNumParams() const;
+    
+    /// Returns internal copy of nuisance parameters
+    Nuisances const &GetNuisances() const;
+    
+    /// Returns internal copy of nuisance parameters
+    Nuisances &GetNuisances();
     
     /// Wrapper for EvalRawInput that checks the size of the given vector
     double Eval(std::vector<double> const &x) const;
@@ -168,18 +181,11 @@ public:
      */
     virtual double EvalRawInput(double const *x) const;
     
-    /// Updates stored nuisances
-    void SetExternalNuisances(Nuisances const &nuisances) const;
-    
 protected:
     /// Jet corrector object
     std::unique_ptr<JetCorrBase> corrector;
     
-    /**
-     * \brief Default values of nuisances
-     * 
-     * They are used for externalized nuisance parameters in the fit.
-     */
+    /// Nuisance parameters
     mutable Nuisances nuisances;
     
     /// Non-owning pointers to individual contributing measurements
