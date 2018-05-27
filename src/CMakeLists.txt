@@ -1,3 +1,4 @@
-add_library(jecfit SHARED JetCorrConstraint.cpp JetCorrDefinitions.cpp FitBase.cpp Nuisances.cpp
-    PhotonJetBinnedSum.cpp PhotonJetRun1.cpp ZJetRun1.cpp MultijetBinnedSum.cpp Rebin.cpp)
+add_library(jecfit SHARED JetCorrDefinitions.cpp FitBase.cpp Nuisances.cpp
+    PhotonJetBinnedSum.cpp PhotonJetRun1.cpp ZJetRun1.cpp MultijetBinnedSum.cpp
+    JetCorrConstraint.cpp HistMorph.cpp Rebin.cpp)
 target_link_libraries(jecfit ${ROOT_LIBRARIES})

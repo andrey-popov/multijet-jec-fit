@@ -2,12 +2,16 @@
 
 #include <FitBase.hpp>
 
+#include <HistMorph.hpp>
+
 #include <TH1.h>
 #include <TH1D.h>
 #include <TH2.h>
 #include <TProfile.h>
 
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -26,6 +30,9 @@ struct FracBin;
  * correction following the method described in [1-2].
  * [1] https://indico.cern.ch/event/646599/#50-on-the-way-to-an-updated-mu
  * [2] https://indico.cern.ch/event/656050/#65-comparison-of-different-app
+ * 
+ * Several systematic uncertainties are included. They are evaluated as multiplicative shifts in
+ * B^{Sim}.
  */
 class MultijetBinnedSum: public MeasurementBase
 {
@@ -82,6 +89,15 @@ private:
          * Computed in the binning of simBalProfile.
          */
         mutable std::vector<double> recompBal;
+        
+        /**
+         * \brief Systematic variations
+         * 
+         * The key of the map is the name of the nuisance parameter controlling the variation.
+         * The variation is defined as a relative deviation from mean values of the balance
+         * observable in simulation.
+         */
+        std::map<std::string, HistMorph> systVars;
     };
         
 public:
@@ -95,6 +111,13 @@ public:
      * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
+    
+    /**
+     * \brief Returns names of nuisance parameters
+     * 
+     * Reimplemented from MeasurementBase.
+     */
+    virtual std::set<std::string> GetNuisances() const override;
     
     /**
      * \brief Builds a histogram of recomputed mean balance observable in data
@@ -153,4 +176,7 @@ private:
     
     /// Dimensionality of the deviation
     unsigned dimensionality;
+    
+    /// Names of available systematic variations (and corresponding nuisances)
+    std::set<std::string> systNames;
 };

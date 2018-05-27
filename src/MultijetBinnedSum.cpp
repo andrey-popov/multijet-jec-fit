@@ -97,6 +97,21 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
         bin.ptLeadProfile->SetDirectory(nullptr);
         bin.ptJetSumProj->SetDirectory(nullptr);
         
+        
+        for (std::string const &systName: {"L1Res", "L2Res", "JER"})
+        {
+            std::string const histPrefix("RelVar_" + methodLabel + "_" + systName);
+            TH1 *histUp = dynamic_cast<TH1 *>(directory->Get((histPrefix + "Up").c_str()));
+            
+            if (histUp)
+            {
+                bin.systVars[systName] = HistMorph(*histUp,
+                  *dynamic_cast<TH1 *>(directory->Get((histPrefix + "Down").c_str())));
+                systNames.insert(systName);
+            }
+        }
+        
+        
         triggerBins.emplace_back(std::move(bin));
     }
     
@@ -157,6 +172,12 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
 unsigned MultijetBinnedSum::GetDim() const
 {
     return dimensionality;
+}
+
+
+std::set<std::string> MultijetBinnedSum::GetNuisances() const
+{
+    return systNames;
 }
 
 
@@ -238,7 +259,13 @@ double MultijetBinnedSum::Eval(JetCorrBase const &corrector, Nuisances const &nu
         for (unsigned binIndex = 1; binIndex <= triggerBin.recompBal.size(); ++binIndex)
         {
             double const meanBal = triggerBin.recompBal[binIndex - 1];
-            double const simMeanBal = triggerBin.simBalProfile->GetBinContent(binIndex);
+            double simMeanBal = triggerBin.simBalProfile->GetBinContent(binIndex);
+            
+            // Apply systematic variations to the mean balance in simulation.  Each variation is
+            //scaled according to the value of the corresponding nuisance parameter.
+            for (auto const &syst: triggerBin.systVars)
+                simMeanBal *= 1. + syst.second.Eval(binIndex - 1, nuisances[syst.first]);
+            
             chi2 += std::pow(meanBal - simMeanBal, 2) / triggerBin.totalUnc2[binIndex - 1];
         }
     }
