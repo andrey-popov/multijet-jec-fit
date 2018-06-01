@@ -56,7 +56,7 @@ double JetCorrStd2P::fSPR(double pt) const
 
 JetCorrStd3P::JetCorrStd3P():
     JetCorrStd2P(),
-    paramsL1({{2.36997, -0.413917}})  // Summer16_03Feb2017H_V3
+    paramsL1({{-0.196332, 0.307378}})  // Summer16_07AugBCDEFGH_V6
 {
     // Change the number of free parameters from two to three
     parameters.resize(3);
