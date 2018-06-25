@@ -125,10 +125,16 @@ int main(int argc, char **argv)
     unsigned const nPOI = nPars - lossFunc.GetNuisances().GetNumParams();
     
     for (unsigned i = 0; i < nPOI; ++i)
+    {
         minimizer.SetVariable(i, "p" + to_string(i), 0., 1e-2);
+        minimizer.SetVariableLimits(i, -1., 1.);
+    }
     
     for (unsigned i = nPOI; i < nPars; ++i)
+    {
         minimizer.SetVariable(i, lossFunc.GetNuisances().GetName(i - nPOI), 0., 1.);
+        minimizer.SetVariableLimits(i, -5., 5.);
+    }
     
     
     // Run minimization
