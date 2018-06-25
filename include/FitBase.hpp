@@ -26,6 +26,9 @@ public:
     /// Returns number of parameters of the correction
     unsigned GetNumParams() const;
     
+    /// Returns set values for parameters of the correction
+    std::vector<double> const &GetParams() const;
+    
     /**
      * \brief Evaluates the correction for the given jet pt
      * 

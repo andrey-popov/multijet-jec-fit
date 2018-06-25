@@ -21,6 +21,12 @@ unsigned JetCorrBase::GetNumParams() const
 }
 
 
+std::vector<double> const &JetCorrBase::GetParams() const
+{
+    return parameters;
+}
+
+
 void JetCorrBase::SetParams(std::vector<double> const &newParams)
 {
     if (parameters.size() != newParams.size())
