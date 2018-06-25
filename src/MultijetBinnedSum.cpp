@@ -433,8 +433,8 @@ void MultijetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances co
     if (triggerBins.front().ptJetSumProj->GetYaxis()->FindFixBin(minPtUncorr) == 0)
     {
         std::ostringstream message;
-        message << "MultijetBinnedSum::UpdateBalance: With the current correction " <<
-          "jet threshold (" << minPt << " -> " << minPtUncorr <<
+        message << "MultijetBinnedSum::UpdateBalance: With the current correction (" <<
+          corrector << "), jet threshold (" << minPt << " -> " << minPtUncorr <<
           " GeV) falls in the underflow bin.";
         throw std::runtime_error(message.str());
     }
@@ -459,7 +459,20 @@ void MultijetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances co
         // Build a map from this translated binning to the fine binning in data histograms. It
         //accounts both for the migration in pt of the leading jet due to the jet correction and
         //the typically larger size of bins used for computation of chi2.
-        auto binMap = mapBinning(triggerBin.binning, uncorrPtBinning);
+        BinMap binMap;
+        
+        try
+        {
+            binMap = mapBinning(triggerBin.binning, uncorrPtBinning);
+        }
+        catch (std::logic_error const &e)
+        {
+            std::ostringstream message;
+            message << e.what() << '\n';
+            message << "MultijetBinnedSum::UpdateBalance: Failed to construct the bin mapping for "
+              "the current correction (" << corrector << ").";
+            throw std::runtime_error(message.str());
+        }
         
         // Under- and overflow bins in pt are included in other trigger bins and must be dropped
         binMap.erase(0);

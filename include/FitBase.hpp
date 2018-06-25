@@ -3,6 +3,7 @@
 #include <Nuisances.hpp>
 
 #include <memory>
+#include <ostream>
 #include <set>
 #include <vector>
 
@@ -64,6 +65,10 @@ protected:
     /// Current parameters of the correction
     std::vector<double> parameters;
 };
+
+
+/// An utility function to print out parameters of a jet correction
+std::ostream &operator<<(std::ostream &os, JetCorrBase const &corrector);
 
 
 /**

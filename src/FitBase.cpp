@@ -84,6 +84,22 @@ double JetCorrBase::UndoCorr(double pt, double tolerance) const
 }
 
 
+std::ostream &operator<<(std::ostream &os, JetCorrBase const &corrector)
+{
+    auto const &params = corrector.GetParams();
+    
+    if (params.size() > 0)
+    {
+        os << params[0];
+        
+        for (unsigned i = 1; i < params.size(); ++i)
+            os << ", " << params[i];
+    }
+    
+    return os;
+}
+
+
 std::set<std::string> MeasurementBase::GetNuisances() const
 {
     return std::set<std::string>();
