@@ -3,11 +3,9 @@
 #include <cmath>
 
 
-JetCorrConstraint::JetCorrConstraint():
-    ptRef(208.),
-    // Target correction and its uncertainty are taken from Summer16_07Aug2017GH_V10 for
-    //pt = 208 GeV, eta = 0
-    targetCorrection(1.0107136), relUncertainty(0.0078)
+JetCorrConstraint::JetCorrConstraint(double ptRef_, double targetCorrection_,
+  double relUncertainty_):
+    ptRef(ptRef_), targetCorrection(targetCorrection_), relUncertainty(relUncertainty_)
 {}
 
 

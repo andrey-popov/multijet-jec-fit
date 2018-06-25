@@ -15,7 +15,7 @@ class JetCorrConstraint: public MeasurementBase
 {
 public:
     /// Constructor
-    JetCorrConstraint();
+    JetCorrConstraint(double ptRef, double targetCorrection, double relUncertainty);
     
 public:
     /**

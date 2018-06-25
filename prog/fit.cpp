@@ -2,6 +2,7 @@
  * Fits for jet correction combinning multiple analyses.
  */
 
+#include <JetCorrConstraint.hpp>
 #include <JetCorrDefinitions.hpp>
 #include <FitBase.hpp>
 #include <MultijetBinnedSum.hpp>
@@ -41,6 +42,8 @@ int main(int argc, char **argv)
         "Input file for photon+jet analysis, binned sum")
       ("zjet-run1", po::value<string>(), "Input file for Z+jet analysis, Run 1 style")
       ("multijet-binnedsum", po::value<string>(), "Input file for multijet analysis, binned sum")
+      ("constraint,c", po::value<string>(),
+        "Constraint for jet correction at reference pt scale, in the form \"correction,rel_unc\"")
       ("output,o", po::value<string>()->default_value("fit.out"),
         "Name for output file with results of the fit");
     
@@ -94,6 +97,49 @@ int main(int argc, char **argv)
         measurements.emplace_back(new MultijetBinnedSum(
           optionsMap["multijet-binnedsum"].as<string>(),
           (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal));
+    
+    if (optionsMap.count("constraint"))
+    {
+        string const optionText(optionsMap["constraint"].as<string>());
+        
+        // Parse the constraint. There should be either two or three numbers separated by commas,
+        //depending on whether the reference pt is given.
+        double ptRef, targetCorr, relUnc;
+        auto const commaPos1 = optionText.find(',');
+        
+        if (commaPos1 == string::npos)
+        {
+            cerr << "Failed to parse constraint \"" << optionText << "\".\n";
+            return EXIT_FAILURE;
+        }
+        
+        auto const commaPos2 = optionText.find(',', commaPos1 + 1);
+        
+        try
+        {
+            if (commaPos2 == string::npos)
+            {
+                ptRef = 208.;  // Default reference scale
+                targetCorr = stod(optionText.substr(0, commaPos1));
+                relUnc = stod(optionText.substr(commaPos1 + 1));
+            }
+            else
+            {
+                ptRef = stod(optionText.substr(0, commaPos1));
+                targetCorr = stod(optionText.substr(commaPos1 + 1, commaPos2));
+                relUnc = stod(optionText.substr(commaPos2 + 1));
+            }
+        }
+        catch (invalid_argument)
+        {
+            cerr << "Failed to parse constraint \"" << optionText << "\".\n";
+            return EXIT_FAILURE;
+        }
+        
+        
+        // Add an artificial measurement that implements the constraint
+        measurements.emplace_back(new JetCorrConstraint(ptRef, targetCorr, relUnc));
+    }
     
     if (measurements.empty())
     {
