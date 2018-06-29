@@ -83,6 +83,9 @@ std::ostream &operator<<(std::ostream &os, JetCorrBase const &corrector);
 class MeasurementBase
 {
 public:
+    virtual ~MeasurementBase() = default;
+    
+public:
     /**
      * \brief Returns dimensionality of the deviation
      * 
@@ -132,6 +135,8 @@ public:
      * JetCorrBase object is owned by this.
      */
     CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector);
+    
+    virtual ~CombLossFunction() = default;
     
 public:
     /**
