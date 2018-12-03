@@ -5,15 +5,24 @@ It is intended to be an alternative to the [standard global fit](https://github.
 The package is under development.
 
 Dependencies:
+
   * CMake 2.8.12 or newer
   * Compiler with support of C++14
   * Boost 1.34 or newer
   * ROOT 6
 
+The package is tested in environment [LCG_94python3](http://lcginfo.cern.ch/release/94python3/):
+
+  * CMake 3.11.1
+  * GCC 6.2.0
+  * Boost 1.66.0
+  * ROOT 6.14.04
+
 To build the package and run an example fit program, execute
+
 ```bash
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 cd ..
 
