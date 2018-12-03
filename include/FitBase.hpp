@@ -24,6 +24,9 @@ public:
     virtual ~JetCorrBase() noexcept;
     
 public:
+    /// Applies the correction to the given jet pt, returning the corrected pt
+    double Apply(double pt) const;
+    
     /// Returns number of parameters of the correction
     unsigned GetNumParams() const;
     

@@ -15,6 +15,12 @@ JetCorrBase::~JetCorrBase() noexcept
 {}
 
 
+double JetCorrBase::Apply(double pt) const
+{
+    return pt * Eval(pt);
+}
+
+
 unsigned JetCorrBase::GetNumParams() const
 {
     return parameters.size();

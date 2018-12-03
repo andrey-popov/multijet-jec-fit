@@ -6,6 +6,7 @@
 #include <JetCorrDefinitions.hpp>
 #include <FitBase.hpp>
 #include <MultijetBinnedSum.hpp>
+#include <MultijetCrawlingBins.hpp>
 #include <PhotonJetBinnedSum.hpp>
 #include <PhotonJetRun1.hpp>
 #include <ZJetRun1.hpp>
@@ -42,6 +43,8 @@ int main(int argc, char **argv)
         "Input file for photon+jet analysis, binned sum")
       ("zjet-run1", po::value<string>(), "Input file for Z+jet analysis, Run 1 style")
       ("multijet-binnedsum", po::value<string>(), "Input file for multijet analysis, binned sum")
+      ("multijet-crawlingbins", po::value<string>(),
+        "Input file for multijet analysis, crawling bins")
       ("constraint,c", po::value<string>(),
         "Constraint for jet correction at reference pt scale, in the form \"correction,rel_unc\"")
       ("output,o", po::value<string>()->default_value("fit.out"),
@@ -97,6 +100,11 @@ int main(int argc, char **argv)
         measurements.emplace_back(new MultijetBinnedSum(
           optionsMap["multijet-binnedsum"].as<string>(),
           (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal));
+    
+    if (optionsMap.count("multijet-crawlingbins"))
+        measurements.emplace_back(new MultijetCrawlingBins(
+          optionsMap["multijet-crawlingbins"].as<string>(),
+          (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal));
     
     if (optionsMap.count("constraint"))
     {
@@ -162,8 +170,8 @@ int main(int argc, char **argv)
     ROOT::Minuit2::Minuit2Minimizer minimizer;
     ROOT::Math::Functor func(&lossFunc, &CombLossFunction::EvalRawInput, nPars);
     minimizer.SetFunction(func);
-    minimizer.SetStrategy(2);   // high quality
-    minimizer.SetErrorDef(1.);  // error level for a chi2 function
+    minimizer.SetStrategy(1);   // Standard quality
+    minimizer.SetErrorDef(1.);  // Error level for a chi2 function
     minimizer.SetPrintLevel(3);
     
     
