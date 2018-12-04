@@ -117,6 +117,11 @@ CombLossFunction::CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector_):
 {}
 
 
+CombLossFunction::CombLossFunction(JetCorrBase *corrector_):
+    corrector(corrector_)
+{}
+
+
 void CombLossFunction::AddMeasurement(MeasurementBase const *measurement)
 {
     measurements.emplace_back(measurement);

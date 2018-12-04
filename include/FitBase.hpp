@@ -139,6 +139,13 @@ public:
      */
     CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector);
     
+    /**
+     * \brief Constructor
+     * 
+     * JetCorrBase object is owned by this.
+     */
+    CombLossFunction(JetCorrBase *corrector);
+    
     virtual ~CombLossFunction() = default;
     
 public:
