@@ -106,8 +106,7 @@ int main(int argc, char **argv)
         auto *measurement = new MultijetCrawlingBins(
           optionsMap["multijet-crawlingbins"].as<string>(),
           (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal);
-        auto r = measurement->SetPtLeadRange(0., 1600.);
-        std::cout << "Adjusted range: (" << r.first << ", " << r.second << ")\n";
+        measurement->SetPtLeadRange(0., 1600.);
         measurements.emplace_back(measurement);
     }
     

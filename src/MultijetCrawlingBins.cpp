@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstring>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -215,8 +214,8 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
     // balance observable in simulation (while in data it can be recomputed for any not too low
     // threshold). In the case of the MPF method, the definition of the balance observable in both
     // data and simulation is affected.
-    auto ptThreshold = dynamic_cast<TVectorD *>(
-      inputFile->Get((methodLabel + "Threshold").c_str()));
+    std::unique_ptr<TVectorD> ptThreshold(dynamic_cast<TVectorD *>(
+      inputFile->Get((methodLabel + "Threshold").c_str())));
     
     if (not ptThreshold)
     {
@@ -226,123 +225,122 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
         throw std::runtime_error(message.str());
     }
     
+    if (ptThreshold->GetNoElements() != 2)
+    {
+        std::ostringstream message;
+        message << "MultijetCrawlingBins::MultijetCrawlingBins: Unexpected number of elements "
+          "read for jet pt threshold.";
+        throw std::runtime_error(message.str());
+    }
     
-    // Loop over directories in the input file. Each directory describes a single trigger bin.
+    
+    // Read target binning for computation of chi^2 and data histograms
+    for (auto const &name: std::initializer_list<std::string>{"Binning", "PtLead", "PtLeadProfile",
+      methodLabel + "Profile", "RelPtJetSumProj"})
+    {
+        if (not inputFile->Get(name.c_str()))
+        {
+            std::ostringstream message;
+            message << "MultijetCrawlingBins::MultijetCrawlingBins: File \"" << fileName <<
+              "\" does not contain required key \"" << name << "\".";
+            throw std::runtime_error(message.str());
+        }
+    }
+    
+    std::unique_ptr<TVectorD> binning(dynamic_cast<TVectorD *>(inputFile->Get("Binning")));
+    
+    std::shared_ptr<TH1> ptLeadHist(dynamic_cast<TH1 *>(inputFile->Get("PtLead")));
+    std::unique_ptr<TProfile> ptLeadProfile(dynamic_cast<TProfile *>(
+      inputFile->Get("PtLeadProfile")));
+    std::unique_ptr<TProfile> balProfile(dynamic_cast<TProfile *>(
+      inputFile->Get((methodLabel + "Profile").c_str())));
+    std::shared_ptr<TH2> sumProj(dynamic_cast<TH2 *>(inputFile->Get("RelPtJetSumProj")));
+    
+    ptLeadHist->SetDirectory(nullptr);
+    ptLeadProfile->SetDirectory(nullptr);
+    balProfile->SetDirectory(nullptr);
+    sumProj->SetDirectory(nullptr);
+    
+    
+    // Rebin TProfile with mean balance observable in data to the target binning.  It will be used
+    // to obtain per-bin uncertainties.
+    std::unique_ptr<TH1> balProfileRebinned(balProfile->Rebin(binning->GetNoElements() - 1,
+      (balProfile->GetName() + "Rebinned"s).c_str(), binning->GetMatrixArray()));
+    balProfileRebinned->SetDirectory(nullptr);
+    
+    
+    // Read splines to compute mean value of the balance observable in simulation. They are
+    // provided separately for different trigger bins.
+    std::vector<double> triggerBoundaries;
+    std::vector<std::shared_ptr<TSpline3>> simBalSplines;
+    
     TIter fileIter(inputFile->GetListOfKeys());
     TKey *key;
     
-    std::vector<double> meanPtLead, meanPtJet;
-    
     while ((key = dynamic_cast<TKey *>(fileIter())))
     {
-        if (strcmp(key->GetClassName(), "TDirectoryFile") != 0)
+        if (key->GetClassName() != "TDirectoryFile"s)
             continue;
         
         TDirectoryFile *directory = dynamic_cast<TDirectoryFile *>(key->ReadObj());
         
-        for (auto const &name: std::initializer_list<std::string>{"Binning", "Sim" + methodLabel,
-          "PtLead", "PtLeadProfile", methodLabel + "Profile", "RelPtJetSumProj"})
+        for (auto const &name: std::initializer_list<std::string>{"Range", "Sim" + methodLabel})
         {
             if (not directory->Get(name.c_str()))
             {
                 std::ostringstream message;
                 message << "MultijetCrawlingBins::MultijetCrawlingBins: Directory \"" <<
-                  key->GetName() << "\" in file \"" << fileName <<
+                  directory->GetName() << "\" in file \"" << fileName <<
                   "\" does not contain required key \"" << name << "\".";
                 throw std::runtime_error(message.str());
             }
         }
         
-        
-        // Read information about the current trigger bin
-        auto binning = *dynamic_cast<TVectorD *>(directory->Get("Binning"));
-        auto ptLeadProfile = dynamic_cast<TProfile *>(directory->Get("PtLeadProfile"));
-        auto balProfile = dynamic_cast<TProfile *>(
-          directory->Get((methodLabel + "Profile").c_str()));
-        
-        std::shared_ptr<TH1> ptLeadHist(dynamic_cast<TH1 *>(directory->Get("PtLead")));
-        std::shared_ptr<TH2> sumProj(dynamic_cast<TH2 *>(directory->Get("RelPtJetSumProj")));
-        std::shared_ptr<TSpline3> simBalSpline(
-          dynamic_cast<TSpline3 *>(directory->Get(("Sim" + methodLabel).c_str())));
-        
-        ptLeadHist->SetDirectory(nullptr);
-        sumProj->SetDirectory(nullptr);
-        
-        
-        // Rebin TProfile with mean balance observable in data to the binning used in the
-        // computation of the chi^2 in order to obtain per-bin uncertainties
-        TH1 *balProfileRebinned = balProfile->Rebin(binning.GetNoElements() - 1,
-          (balProfile->GetName() + "Rebinned"s).c_str(), binning.GetMatrixArray());
-        
-        
-        // Find a number that is smaller than the width of any bin in pt of the leading jet in the
-        // underlying histograms. It is used for the matching between the underlying binning and
-        // the binning used in the computation of the chi^2.
-        double eps = std::numeric_limits<double>::infinity();
-        
-        for (int bin = 1; bin <= ptLeadHist->GetNbinsX(); ++bin)
-        {
-            double const binWidth = ptLeadHist->GetBinWidth(bin);
-            
-            if (eps > binWidth)
-                eps = binWidth;
-        }
-        
-        eps /= 2;
-        
-        if (eps <= 0.)
-        {
-            std::ostringstream message;
-            message << "MultijetCrawlingBins::MultijetCrawlingBins: Found bins of zero width.";
-            throw std::runtime_error(message.str());
-        }
-        
-        
-        // Construct chi^2 bins. Each one consists of one or (typically) more bins in pt of the
-        // leading jet that are included in the range of a single bin in variable `binning`.
-        for (int binChi2 = 1; binChi2 < binning.GetNoElements(); ++binChi2)
-        {
-            unsigned firstBin = ptLeadHist->FindFixBin(binning[binChi2 - 1] + eps);
-            unsigned lastBin = ptLeadHist->FindFixBin(binning[binChi2] - eps);
-            
-            chi2Bins.emplace_back(firstBin, lastBin, ptLeadHist, sumProj, simBalSpline,
-              std::pow(balProfileRebinned->GetBinError(binChi2), 2));
-        }
-        
-        
-        // Save mean values of pt of the leading jet in each bin of the underlying binning. If the
-        // vector is empty, first prefill it with positions of bin centres. Then update the
-        // estimates for non-empty using more precise results from `ptLeadProfile`. Note that the
-        // binning is shared among all trigger bins, but there is no overlap in filled bins.
-        if (meanPtLead.empty())
-        {
-            meanPtLead.reserve(ptLeadProfile->GetNbinsX());
-            
-            for (int bin = 1; bin <= ptLeadProfile->GetNbinsX(); ++bin)
-                meanPtLead.emplace_back(ptLeadProfile->GetBinCenter(bin));
-        }
-        
-        for (int bin = 1; bin <= ptLeadProfile->GetNbinsX(); ++bin)
-        {
-            if (ptLeadProfile->GetBinContent(bin) > 0)
-                meanPtLead[bin - 1] = ptLeadProfile->GetBinContent(bin);
-        }
-        
-        
-        
-        // Save mean jet pt along the second axis of sumProj, which is needed for the JetCache
-        // object. Assume the binning is the same for all triggers. Take positions of bin centres
-        // as approximate mean values.
-        if (meanPtJet.empty())
-        {
-            meanPtJet.reserve(sumProj->GetNbinsY());
-            
-            for (int bin = 1; bin <= sumProj->GetNbinsY(); ++bin)
-                meanPtJet.emplace_back(sumProj->GetYaxis()->GetBinCenter(bin));
-        }
+        std::unique_ptr<TVectorD> range(dynamic_cast<TVectorD *>(directory->Get("Range")));
+        triggerBoundaries.emplace_back((*range)[1]);
+        simBalSplines.emplace_back(dynamic_cast<TSpline3 *>(
+          directory->Get(("Sim" + methodLabel).c_str())));
     }
     
     inputFile->Close();
+    
+    
+    // Find a number that is smaller than the width of any bin in pt of the leading jet in the
+    // underlying histograms. It is used for the matching between the underlying binning and
+    // the target chi^2 binning.
+    double eps = std::numeric_limits<double>::infinity();
+    
+    for (int bin = 1; bin <= ptLeadHist->GetNbinsX(); ++bin)
+    {
+        double const binWidth = ptLeadHist->GetBinWidth(bin);
+        
+        if (eps > binWidth)
+            eps = binWidth;
+    }
+    
+    eps /= 2;
+    
+    if (eps <= 0.)
+    {
+        std::ostringstream message;
+        message << "MultijetCrawlingBins::MultijetCrawlingBins: Found bins of zero width.";
+        throw std::runtime_error(message.str());
+    }
+    
+    
+    // Construct chi^2 bins. Each one consists of one or (typically) more bins in pt of the leading
+    // jet that are included in the range of a single bin in variable `binning`.
+    for (int binChi2 = 1; binChi2 < binning->GetNoElements(); ++binChi2)
+    {
+        unsigned firstBin = ptLeadHist->FindFixBin((*binning)[binChi2 - 1] + eps);
+        unsigned lastBin = ptLeadHist->FindFixBin((*binning)[binChi2] - eps);
+        
+        int iTrigger = std::lower_bound(triggerBoundaries.begin(), triggerBoundaries.end(),
+          (*binning)[binChi2 - 1] + eps) - triggerBoundaries.begin();
+        
+        chi2Bins.emplace_back(firstBin, lastBin, ptLeadHist, sumProj, simBalSplines.at(iTrigger),
+          std::pow(balProfileRebinned->GetBinError(binChi2), 2));
+    }
     
     if (chi2Bins.empty())
     {
@@ -352,34 +350,27 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
         throw std::runtime_error(message.str());
     }
     
-    
-    // Make sure trigger bins and `meanPtLead` are sorted in pt
-    std::sort(chi2Bins.begin(), chi2Bins.end(),
-      [](auto const &left, auto const &right)
-      {return (left.PtRange().first < right.PtRange().first);});
-    std::sort(meanPtLead.begin(), meanPtLead.end());
-    
-    for (unsigned i = 0; i < chi2Bins.size() - 1; ++i)
-        if (chi2Bins[i].PtRange().second > chi2Bins[i + 1].PtRange().first)
-        {
-            std::ostringstream message;
-            message << "MultijetCrawlingBins::MultijetCrawlingBins: Overlapping chi^2 bins found.";
-            throw std::runtime_error(message.str());
-        }
-    
-    for (unsigned i = 0; i < meanPtLead.size() - 1; ++i)
-        if (meanPtLead[i] == meanPtLead[i + 1])
-        {
-            std::ostringstream message;
-            message << "MultijetCrawlingBins::MultijetCrawlingBins: Duplicate bins in pt of the "
-              "leading jet found.";
-            throw std::runtime_error(message.str());
-        }
-    
     chi2BinMask.assign(chi2Bins.size(), true);
     
     
     // Initialize the object to cache values of jet corrections
+    std::vector<double> meanPtLead;
+    meanPtLead.reserve(ptLeadHist->GetNbinsX());
+    
+    for (int bin = 1; bin <= ptLeadHist->GetNbinsX(); ++bin)
+    {
+        if (ptLeadHist->GetBinContent(bin) > 0.)
+            meanPtLead.emplace_back(ptLeadProfile->GetBinContent(bin));
+        else
+            meanPtLead.emplace_back(ptLeadProfile->GetBinCenter(bin));
+    }
+    
+    std::vector<double> meanPtJet;
+    meanPtJet.reserve(sumProj->GetNbinsY());
+    
+    for (int bin = 1; bin <= sumProj->GetNbinsY(); ++bin)
+        meanPtJet.emplace_back(sumProj->GetYaxis()->GetBinCenter(bin));
+    
     jetCache.reset(new JetCache(meanPtLead, meanPtJet, (*ptThreshold)[0], (*ptThreshold)[1]));
     
     for (auto &chi2Bin: chi2Bins)
