@@ -102,9 +102,14 @@ int main(int argc, char **argv)
           (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal));
     
     if (optionsMap.count("multijet-crawlingbins"))
-        measurements.emplace_back(new MultijetCrawlingBins(
+    {
+        auto *measurement = new MultijetCrawlingBins(
           optionsMap["multijet-crawlingbins"].as<string>(),
-          (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal));
+          (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal);
+        auto r = measurement->SetPtLeadRange(0., 1600.);
+        std::cout << "Adjusted range: (" << r.first << ", " << r.second << ")\n";
+        measurements.emplace_back(measurement);
+    }
     
     if (optionsMap.count("constraint"))
     {

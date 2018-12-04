@@ -236,6 +236,14 @@ public:
      */
     virtual double Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const override;
     
+    /**
+     * Restricts computation to given range in pt of the leading jet
+     * 
+     * Given boundaries are rounded to the closest boundaries of chi^2 bins. Returns the actual
+     * range that will be used in the computation.
+     */
+    std::pair<double, double> SetPtLeadRange(double minPt, double maxPt);
+    
 private:
     /// Method of computation
     Method method;
@@ -246,6 +254,14 @@ private:
      * The vector is sorted in the increasing order in pt.
      */
     std::vector<Chi2Bin> chi2Bins;
+    
+    /**
+     * Masks for chi^2 bins
+     * 
+     * Only chi^2 bins at positions where the mask value is true should be used in the computation
+     * of the overall chi^2.
+     */
+    std::vector<bool> chi2BinMask;
     
     /// An object to cache values of jet corrections
     mutable std::unique_ptr<JetCache> jetCache;

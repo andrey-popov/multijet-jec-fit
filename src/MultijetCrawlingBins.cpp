@@ -376,6 +376,8 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
             throw std::runtime_error(message.str());
         }
     
+    chi2BinMask.assign(chi2Bins.size(), true);
+    
     
     // Initialize the object to cache values of jet corrections
     jetCache.reset(new JetCache(meanPtLead, meanPtJet, (*ptThreshold)[0], (*ptThreshold)[1]));
@@ -387,7 +389,7 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
 
 unsigned MultijetCrawlingBins::GetDim() const
 {
-    return chi2Bins.size();
+    return std::count(chi2BinMask.begin(), chi2BinMask.end(), true);
 }
 
 
@@ -396,8 +398,68 @@ double MultijetCrawlingBins::Eval(JetCorrBase const &corrector, Nuisances const 
     jetCache->Update(corrector);
     double chi2 = 0.;
     
-    for (auto const &chi2Bin: chi2Bins)
-        chi2 += chi2Bin.Chi2();
+    for (unsigned i = 0; i < chi2Bins.size(); ++i)
+    {
+        if (chi2BinMask[i])
+            chi2 += chi2Bins[i].Chi2();
+    }
     
     return chi2;
+}
+
+
+std::pair<double, double> MultijetCrawlingBins::SetPtLeadRange(double minPt, double maxPt)
+{
+    // Construct an auxiliary vector of all boundaries between chi^2 bins. Assume that all bins are
+    // adjacent.
+    std::vector<double> edges;
+    edges.reserve(chi2Bins.size() + 1);
+    
+    for (auto const &chi2Bin: chi2Bins)
+        edges.emplace_back(chi2Bin.PtRange().first);
+    
+    edges.emplace_back(chi2Bins.back().PtRange().second);
+    
+    
+    // Find closest edges
+    unsigned iEdgeMin = std::lower_bound(edges.begin(), edges.end(), minPt) - edges.begin();
+    
+    if (iEdgeMin == edges.size())
+        --iEdgeMin;
+    else if (iEdgeMin > 0)
+    {
+        if (edges[iEdgeMin] - minPt > minPt - edges[iEdgeMin - 1])
+            --iEdgeMin;
+    }
+    
+    unsigned iEdgeMax = std::lower_bound(edges.begin(), edges.end(), maxPt) - edges.begin();
+    
+    if (iEdgeMax == edges.size())
+        --iEdgeMax;
+    else if (iEdgeMax > 0)
+    {
+        if (edges[iEdgeMax] - maxPt > maxPt - edges[iEdgeMax - 1])
+            --iEdgeMax;
+    }
+    
+    if (iEdgeMax <= iEdgeMin)
+    {
+        std::ostringstream message;
+        message << "MultijetCrawlingBins::SetPtLeadRange: Requested range is too narrow.";
+        throw std::runtime_error(message.str());
+    }
+    
+    
+    // Mask chi^2 bins outsize of the range
+    for (unsigned i = 0; i < iEdgeMin; ++i)
+        chi2BinMask[i] = false;
+    
+    for (unsigned i = iEdgeMin; i < iEdgeMax; ++i)
+        chi2BinMask[i] = true;
+    
+    for (unsigned i = iEdgeMax; i < chi2BinMask.size(); ++i)
+        chi2BinMask[i] = false;
+    
+    
+    return {edges[iEdgeMin], edges[iEdgeMax]};
 }
