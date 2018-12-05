@@ -271,8 +271,7 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
     
     // Read splines to compute mean value of the balance observable in simulation. They are
     // provided separately for different trigger bins.
-    std::vector<double> triggerBoundaries;
-    std::vector<std::shared_ptr<TSpline3>> simBalSplines;
+    std::vector<std::pair<double, std::shared_ptr<TSpline3>>> simBalSplines;
     
     TIter fileIter(inputFile->GetListOfKeys());
     TKey *key;
@@ -297,10 +296,13 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
         }
         
         std::unique_ptr<TVectorD> range(dynamic_cast<TVectorD *>(directory->Get("Range")));
-        triggerBoundaries.emplace_back((*range)[1]);
-        simBalSplines.emplace_back(dynamic_cast<TSpline3 *>(
-          directory->Get(("Sim" + methodLabel).c_str())));
+        simBalSplines.emplace_back(std::make_pair((*range)[0], dynamic_cast<TSpline3 *>(
+          directory->Get(("Sim" + methodLabel).c_str()))));
     }
+    
+    
+    std::sort(simBalSplines.begin(), simBalSplines.end(),
+      [](auto const &lhs, auto const &rhs){return (lhs.first < rhs.first);});
     
     inputFile->Close();
     
@@ -335,10 +337,12 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
         unsigned firstBin = ptLeadHist->FindFixBin((*binning)[binChi2 - 1] + eps);
         unsigned lastBin = ptLeadHist->FindFixBin((*binning)[binChi2] - eps);
         
-        int iTrigger = std::lower_bound(triggerBoundaries.begin(), triggerBoundaries.end(),
-          (*binning)[binChi2 - 1] + eps) - triggerBoundaries.begin();
+        auto simBalSplineIt = std::lower_bound(simBalSplines.begin(), simBalSplines.end(),
+          (*binning)[binChi2 - 1] + eps,
+          [](auto const &lhs, double const &rhs){return (lhs.first < rhs);});
+        --simBalSplineIt;
         
-        chi2Bins.emplace_back(firstBin, lastBin, ptLeadHist, sumProj, simBalSplines.at(iTrigger),
+        chi2Bins.emplace_back(firstBin, lastBin, ptLeadHist, sumProj, simBalSplineIt->second,
           std::pow(balProfileRebinned->GetBinError(binChi2), 2));
     }
     
