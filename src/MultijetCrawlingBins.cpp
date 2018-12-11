@@ -176,7 +176,7 @@ double MultijetCrawlingBins::Chi2Bin::MeanMPF() const
         double sumJets = 0.;
         
         for (unsigned binPtJet = ptJetBinRange.first; binPtJet <= ptJetBinRange.second; ++binPtJet)
-            sumJets += sumProj->GetBinContent(binPtLead, binPtJet) * \
+            sumJets -= sumProj->GetBinContent(binPtLead, binPtJet) * \
               (1 - jetCache->CorrectionPtJet(binPtJet)) * jetCache->Weight(binPtJet);
         
         sumBal += sumJets / jetCache->CorrectionPtLead(binPtLead);
