@@ -88,6 +88,12 @@ class MultijetChi2:
         return self._loss_func.GetNDF()
     
     
+    def set_pt_range(self, min_pt1, max_pt1):
+        """Set range in pt of the leading jet used in measurement."""
+        
+        self.measurement.SetPtLeadRange(min_pt1, max_pt1)
+    
+    
     def _setup_minimizer(self, print_level=0):
         """Create and setup a minimizer.
         
