@@ -71,10 +71,19 @@ int main()
     
     
     std::cout << "\n\nMultijetCrawlingBins\n\n";
-    inputFile = "/gridgroup/cms/popov/Analyses/JetMET/2018.10.18_Crowling-bins/Analysis/multijet.root";
+    inputFile = "/gridgroup/cms/popov/Analyses/JetMET/2018.10.18_Crawling-bins/Fit/multijet.root";
     
     std::cout << "Loss function for pt balancing with various jet corrections:\n";
     lossFunc.reset(new MultijetCrawlingBins(inputFile, MultijetCrawlingBins::Method::PtBal));
+    
+    for (auto const &p: {-2e-2, -1e-2, -5e-3, 0., 5e-3, 1e-2, 2e-2})
+    {
+        jetCorr.SetParams({p});
+        std::cout << "  " << lossFunc->Eval(jetCorr, dummyNuisances) << std::endl;
+    }
+    
+    std::cout << "\nLoss function for MPF with various jet corrections:\n";
+    lossFunc.reset(new MultijetCrawlingBins(inputFile, MultijetCrawlingBins::Method::MPF));
     
     for (auto const &p: {-2e-2, -1e-2, -5e-3, 0., 5e-3, 1e-2, 2e-2})
     {

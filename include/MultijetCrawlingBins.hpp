@@ -72,7 +72,7 @@ private:
          * \param meanPtLead  Ordered vector of typical pt in bins along the first axis.
          * \param meanPtJet  Ordered vector of typical pt in bins along the second axis.
          * \param thresholdStart, thresholdEnd  Reference values of pt that define the smooth
-         *     threshold for pt balance.
+         *     pt threshold.
          */
         JetCache(std::vector<double> const &meanPtLead, std::vector<double> const &meanPtJet,
           double thresholdStart, double thresholdEnd);
@@ -121,7 +121,7 @@ private:
         std::vector<double> ptLeadCorrections, ptJetCorrections;
         
         /// Cached values of weights for bins along the second axis
-        std::vector<double> ptBalWeights;
+        std::vector<double> jetWeights;
         
         /**
          * Range of bins along the second axis that have non-zero contribution
@@ -148,16 +148,19 @@ private:
         /**
          * Constructor
          * 
+         * \param method  Computation method, i.e. the observable to be used for chi^2.
          * \param firstBin, lastBin  Range of bins in pt of the leading jet in the histograms given
          *     as other arguments, that contribute to the current chi^2 bin.
          * \param ptLeadHist  Histogram of event counts in bins of pt of the leading jet in data.
+         * \param mpfProfile  Profile with mean values of the MPF observable.
          * \param sumProj  Histogram of jet projections in data. See description of data member
          *     with the same name.
          * \param simBalSpline  Spline that approximates mean value of the balance observable in
          *     simulation. See description of data member with the same name.
          * \param unc2  Squared uncertainty to be used in the computation of chi^2.
          */
-        Chi2Bin(unsigned firstBin, unsigned lastBin, std::shared_ptr<TH1> ptLeadHist,
+        Chi2Bin(Method method, unsigned firstBin, unsigned lastBin,
+          std::shared_ptr<TH1> ptLeadHist, std::shared_ptr<TProfile> mpfProfile,
           std::shared_ptr<TH2> sumProj, std::shared_ptr<TSpline3> simBalSpline, double unc2);
         
     public:
@@ -180,7 +183,10 @@ private:
         void SetJetCache(JetCache const *jetCache);
     
     private:
-        /// Implementats computation of mean value of the pt balance observable in data
+        /// Implements computation of mean value of the MPF observable in data
+        double MeanMPF() const;
+        
+        /// Implements computation of mean value of the pt balance observable in data
         double MeanPtBal() const;
         
     private:
@@ -193,6 +199,13 @@ private:
         
         /// Histogram of event counts in bins of pt of the leading jet
         std::shared_ptr<TH1> ptLeadHist;
+        
+        /**
+         * Profile with mean values of the MPF observable
+         * 
+         * Not set when computing the pt balance observable.
+         */
+        std::shared_ptr<TProfile> mpfProfile;
         
         /**
          * Histogram of jet projections
@@ -212,6 +225,9 @@ private:
         
         /// Squared uncertainty to be used for chi^2
         double unc2;
+        
+        /// Pointer to method to compute mean balance in data using the chosen observable
+        double (Chi2Bin::*meanBalanceCalc)() const;
         
         /// Non-owning pointer to a JetCache object
         JetCache const *jetCache;

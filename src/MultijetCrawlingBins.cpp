@@ -19,7 +19,7 @@ MultijetCrawlingBins::JetCache::JetCache(std::vector<double> const &meanPtLead_,
     meanPtLead(meanPtLead_), meanPtJet(meanPtJet_),
     thresholdStart(thresholdStart_), thresholdEnd(thresholdEnd_),
     ptLeadCorrections(meanPtLead.size(), 0.), ptJetCorrections(meanPtJet.size(), 0.),
-    ptBalWeights(meanPtJet.size(), 0.), firstPtJetBin(1), lastPtJetBin(ptBalWeights.size())
+    jetWeights(meanPtJet.size(), 0.), firstPtJetBin(1), lastPtJetBin(jetWeights.size())
 {}
 
 
@@ -55,26 +55,26 @@ void MultijetCrawlingBins::JetCache::Update(JetCorrBase const &corrector)
     for (unsigned i = 0; i < meanPtJet.size(); ++i)
     {
         ptJetCorrections[i] = corrector.Eval(meanPtJet[i]);
-        ptBalWeights[i] = JetWeight(meanPtJet[i] * ptJetCorrections[i]);
+        jetWeights[i] = JetWeight(meanPtJet[i] * ptJetCorrections[i]);
     }
     
     // Find first bin for which the weight is not zero
     firstPtJetBin = 0;
     
-    while (ptBalWeights[firstPtJetBin] == 0.)
+    while (jetWeights[firstPtJetBin] == 0.)
         ++firstPtJetBin;
     
     // Convert to ROOT indexing convention
     ++firstPtJetBin;
     
     // The last bin in ROOT indexing convention
-    lastPtJetBin = ptBalWeights.size();
+    lastPtJetBin = jetWeights.size();
 }
 
 
 double MultijetCrawlingBins::JetCache::Weight(unsigned bin) const
 {
-    return ptBalWeights[bin - 1];
+    return jetWeights[bin - 1];
 }
 
 
@@ -101,14 +101,19 @@ double MultijetCrawlingBins::JetCache::JetWeight(double pt) const
 
 
 
-MultijetCrawlingBins::Chi2Bin::Chi2Bin(unsigned firstBin_, unsigned lastBin_,
-  std::shared_ptr<TH1> ptLeadHist_, std::shared_ptr<TH2> sumProj_,
-  std::shared_ptr<TSpline3> simBalSpline_, double unc2_):
+MultijetCrawlingBins::Chi2Bin::Chi2Bin(MultijetCrawlingBins::Method method, unsigned firstBin_,
+  unsigned lastBin_, std::shared_ptr<TH1> ptLeadHist_, std::shared_ptr<TProfile> mpfProfile_,
+  std::shared_ptr<TH2> sumProj_, std::shared_ptr<TSpline3> simBalSpline_, double unc2_):
     firstBin(firstBin_), lastBin(lastBin_),
-    ptLeadHist(ptLeadHist_), sumProj(sumProj_),
+    ptLeadHist(ptLeadHist_), mpfProfile(mpfProfile_), sumProj(sumProj_),
     simBalSpline(simBalSpline_), unc2(unc2_),
     jetCache(nullptr)
-{}
+{
+    if (method == MultijetCrawlingBins::Method::PtBal)
+        meanBalanceCalc = &Chi2Bin::MeanPtBal;
+    else
+        meanBalanceCalc = &Chi2Bin::MeanMPF;
+}
 
 
 double MultijetCrawlingBins::Chi2Bin::Chi2() const
@@ -119,9 +124,7 @@ double MultijetCrawlingBins::Chi2Bin::Chi2() const
 
 double MultijetCrawlingBins::Chi2Bin::MeanBalance() const
 {
-    // Compute mean balance observable in data according to selected algorithm.  At the moment only
-    // pt balance is supported.
-    return MeanPtBal();
+    return (this->*meanBalanceCalc)();
 }
 
 
@@ -158,6 +161,32 @@ void MultijetCrawlingBins::Chi2Bin::SetJetCache(JetCache const *jetCache_)
 }
 
 
+double MultijetCrawlingBins::Chi2Bin::MeanMPF() const
+{
+    double sumBal = 0.;
+    double numEvents = 0.;
+    
+    auto const ptJetBinRange = jetCache->PtJetBinRange();
+    
+    for (unsigned binPtLead = firstBin; binPtLead <= lastBin; ++binPtLead)
+    {
+        sumBal += mpfProfile->GetBinContent(binPtLead) * ptLeadHist->GetBinContent(binPtLead) / \
+          jetCache->CorrectionPtLead(binPtLead);
+        
+        double sumJets = 0.;
+        
+        for (unsigned binPtJet = ptJetBinRange.first; binPtJet <= ptJetBinRange.second; ++binPtJet)
+            sumJets += sumProj->GetBinContent(binPtLead, binPtJet) * \
+              (1 - jetCache->CorrectionPtJet(binPtJet)) * jetCache->Weight(binPtJet);
+        
+        sumBal += sumJets / jetCache->CorrectionPtLead(binPtLead);
+        numEvents += ptLeadHist->GetBinContent(binPtLead);
+    }
+    
+    return sumBal / numEvents;
+}
+
+
 double MultijetCrawlingBins::Chi2Bin::MeanPtBal() const
 {
     double sumBal = 0.;
@@ -186,10 +215,6 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
   MultijetCrawlingBins::Method method_):
     method(method_)
 {
-    if (method == Method::MPF)
-        throw std::runtime_error("MPF method is not yet implemented in MultijetCrawlingBins.");
-    
-    
     std::string methodLabel;
     
     if (method == Method::PtBal)
@@ -252,7 +277,7 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
     std::shared_ptr<TH1> ptLeadHist(dynamic_cast<TH1 *>(inputFile->Get("PtLead")));
     std::unique_ptr<TProfile> ptLeadProfile(dynamic_cast<TProfile *>(
       inputFile->Get("PtLeadProfile")));
-    std::unique_ptr<TProfile> balProfile(dynamic_cast<TProfile *>(
+    std::shared_ptr<TProfile> balProfile(dynamic_cast<TProfile *>(
       inputFile->Get((methodLabel + "Profile").c_str())));
     std::shared_ptr<TH2> sumProj(dynamic_cast<TH2 *>(inputFile->Get("RelPtJetSumProj")));
     
@@ -342,8 +367,9 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
           [](auto const &lhs, double const &rhs){return (lhs.first < rhs);});
         --simBalSplineIt;
         
-        chi2Bins.emplace_back(firstBin, lastBin, ptLeadHist, sumProj, simBalSplineIt->second,
-          std::pow(balProfileRebinned->GetBinError(binChi2), 2));
+        chi2Bins.emplace_back(method, firstBin, lastBin, ptLeadHist,
+          (method == MultijetCrawlingBins::Method::MPF) ? balProfile : nullptr,
+          sumProj, simBalSplineIt->second, std::pow(balProfileRebinned->GetBinError(binChi2), 2));
     }
     
     if (chi2Bins.empty())
