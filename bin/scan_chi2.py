@@ -65,6 +65,11 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
     
+    if args.method == 'PtBal':
+        method_label = '$p_\\mathrm{T}$ balance'
+    else:
+        method_label = 'MPF'
+    
     
     loss_func = jecfit.MultijetChi2(args.multijet_crawlingbins, args.method)
     fit_results = loss_func.fit()
@@ -100,6 +105,7 @@ if __name__ == '__main__':
             '$\\theta_{:d} = {:.3f}$'.format(1 - ivar, fit_results.vars[1 - ivar].value),
             ha='left', va='bottom', transform=axes.transAxes
         )
+        axes.text(0., 1.003, method_label, ha='left', va='bottom', transform=axes.transAxes)
         
         if args.label:
             axes.text(1., 1.003, args.label, ha='right', va='bottom', transform=axes.transAxes)
@@ -131,6 +137,7 @@ if __name__ == '__main__':
     
     axes.set_xlabel('$\\theta_0$')
     axes.set_ylabel('$\\theta_1$')
+    axes.text(0., 1.003, method_label, ha='left', va='bottom', transform=axes.transAxes)
     
     if args.label:
         axes.text(1., 1.003, args.label, ha='right', va='bottom', transform=axes.transAxes)
