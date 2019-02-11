@@ -287,8 +287,15 @@ private:
     };
     
 public:
-    /// Constructor from path to ROOT file with inputs and computation method
-    MultijetCrawlingBins(std::string const &fileName, Method method);
+    /**
+     * Constructor
+     *
+     * \param fileName  Path to ROOT file with inputs.
+     * \param method  Computation method.
+     * \nuisanceDefs  Object that will collect requested nuisance parameters.
+     */
+    MultijetCrawlingBins(std::string const &fileName, Method method,
+      NuisanceDefinitions &nuisanceDefs);
     
 public:
     /**

@@ -3,6 +3,7 @@
 #include <FitBase.hpp>
 
 #include <Morphing.hpp>
+#include <Nuisances.hpp>
 
 #include <TH1.h>
 #include <TH1D.h>
@@ -102,7 +103,7 @@ private:
         
 public:
     /// Constructor
-    MultijetBinnedSum(std::string const &fileName, Method method);
+    MultijetBinnedSum(std::string const &fileName, Method method, NuisanceDefinitions &nuisanceDefs);
     
 public:
     /**
@@ -111,13 +112,6 @@ public:
      * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
-    
-    /**
-     * \brief Returns names of nuisance parameters
-     * 
-     * Reimplemented from MeasurementBase.
-     */
-    virtual std::set<std::string> GetNuisances() const override;
     
     /**
      * \brief Builds a histogram of recomputed mean balance observable in data
@@ -176,7 +170,5 @@ private:
     
     /// Dimensionality of the deviation
     unsigned dimensionality;
-    
-    /// Names of available systematic variations (and corresponding nuisances)
-    std::set<std::string> systNames;
 };
+

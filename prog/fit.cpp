@@ -7,6 +7,7 @@
 #include <FitBase.hpp>
 #include <MultijetBinnedSum.hpp>
 #include <MultijetCrawlingBins.hpp>
+#include <Nuisances.hpp>
 #include <PhotonJetBinnedSum.hpp>
 #include <PhotonJetRun1.hpp>
 #include <ZJetRun1.hpp>
@@ -80,17 +81,21 @@ int main(int argc, char **argv)
     }
     
     
+    NuisanceDefinitions nuisanceDefs;
+
+
     // Construct all requested measurements
     list<unique_ptr<MeasurementBase>> measurements;
     
     if (optionsMap.count("photonjet-run1"))
         measurements.emplace_back(new PhotonJetRun1(optionsMap["photonjet-run1"].as<string>(),
-          (useMPF) ? PhotonJetRun1::Method::MPF : PhotonJetRun1::Method::PtBal));
+          (useMPF) ? PhotonJetRun1::Method::MPF : PhotonJetRun1::Method::PtBal, nuisanceDefs));
     
     if (optionsMap.count("photonjet-binnedsum"))
         measurements.emplace_back(new PhotonJetBinnedSum(
           optionsMap["photonjet-binnedsum"].as<string>(),
-          (useMPF) ? PhotonJetBinnedSum::Method::MPF : PhotonJetBinnedSum::Method::PtBal));
+          (useMPF) ? PhotonJetBinnedSum::Method::MPF : PhotonJetBinnedSum::Method::PtBal,
+          nuisanceDefs));
     
     if (optionsMap.count("zjet-run1"))
         measurements.emplace_back(new ZJetRun1(optionsMap["zjet-run1"].as<string>(),
@@ -99,13 +104,15 @@ int main(int argc, char **argv)
     if (optionsMap.count("multijet-binnedsum"))
         measurements.emplace_back(new MultijetBinnedSum(
           optionsMap["multijet-binnedsum"].as<string>(),
-          (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal));
+          (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal,
+          nuisanceDefs));
     
     if (optionsMap.count("multijet-crawlingbins"))
     {
         auto *measurement = new MultijetCrawlingBins(
           optionsMap["multijet-crawlingbins"].as<string>(),
-          (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal);
+          (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal,
+          nuisanceDefs);
         measurement->SetPtLeadRange(0., 1600.);
         measurements.emplace_back(measurement);
     }
@@ -162,7 +169,7 @@ int main(int argc, char **argv)
     
     // Construct an object to evaluate the loss function
     auto jetCorr = make_unique<JetCorrStd2P>();
-    CombLossFunction lossFunc(move(jetCorr));
+    CombLossFunction lossFunc(move(jetCorr), nuisanceDefs);
     
     for (auto const &measurement: measurements)
         lossFunc.AddMeasurement(measurement.get());
@@ -180,7 +187,7 @@ int main(int argc, char **argv)
     
     
     // Initial point
-    unsigned const nPOI = nPars - lossFunc.GetNuisances().GetNumParams();
+    unsigned const nPOI = nPars - nuisanceDefs.GetNumParams();
     
     for (unsigned i = 0; i < nPOI; ++i)
     {
@@ -190,7 +197,7 @@ int main(int argc, char **argv)
     
     for (unsigned i = nPOI; i < nPars; ++i)
     {
-        minimizer.SetVariable(i, lossFunc.GetNuisances().GetName(i - nPOI), 0., 1.);
+        minimizer.SetVariable(i, nuisanceDefs.GetName(i - nPOI), 0., 1.);
         minimizer.SetVariableLimits(i, -5., 5.);
     }
     

@@ -10,7 +10,7 @@
 
 
 PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
-  PhotonJetBinnedSum::Method method_):
+  PhotonJetBinnedSum::Method method_, NuisanceDefinitions &nuisanceDefs):
     method(method_),
     photonScaleVar(0.01)  // a dummy value
 {
@@ -79,18 +79,13 @@ PhotonJetBinnedSum::PhotonJetBinnedSum(std::string const &fileName,
     
     
     recompBal.resize(simBalProfile->GetNbinsX());
+    nuisanceDefs.Register("PhotonScale");
 }
 
 
 unsigned PhotonJetBinnedSum::GetDim() const
 {
     return simBalProfile->GetNbinsX();
-}
-
-
-std::set<std::string> PhotonJetBinnedSum::GetNuisances() const
-{
-    return std::set<std::string>{"PhotonScale"};
 }
 
 

@@ -16,7 +16,7 @@
 
 
 MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
-  MultijetBinnedSum::Method method_):
+  MultijetBinnedSum::Method method_, NuisanceDefinitions &nuisanceDefs):
     method(method_)
 {
     std::string methodLabel;
@@ -107,7 +107,7 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
             {
                 bin.systVars[systName] = HistMorph(*histUp,
                   *dynamic_cast<TH1 *>(directory->Get((histPrefix + "Down").c_str())));
-                systNames.insert(systName);
+                nuisanceDefs.Register(systName);
             }
         }
         
@@ -172,12 +172,6 @@ MultijetBinnedSum::MultijetBinnedSum(std::string const &fileName,
 unsigned MultijetBinnedSum::GetDim() const
 {
     return dimensionality;
-}
-
-
-std::set<std::string> MultijetBinnedSum::GetNuisances() const
-{
-    return systNames;
 }
 
 
@@ -505,3 +499,4 @@ void MultijetBinnedSum::UpdateBalance(JetCorrBase const &corrector, Nuisances co
         }
     }
 }
+

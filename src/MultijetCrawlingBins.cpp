@@ -279,7 +279,7 @@ double MultijetCrawlingBins::Chi2Bin::MeanPtBal(Nuisances const &nuisances) cons
 
 
 MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
-  MultijetCrawlingBins::Method method_):
+  MultijetCrawlingBins::Method method_, NuisanceDefinitions &):
     method(method_)
 {
     std::string methodLabel;

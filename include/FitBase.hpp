@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <ostream>
-#include <set>
 #include <vector>
 
 
@@ -99,13 +98,6 @@ public:
     virtual unsigned GetDim() const = 0;
     
     /**
-     * \brief Returns names of nuisance parameters
-     * 
-     * In the default implementation, an empty set is returned.
-     */
-    virtual std::set<std::string> GetNuisances() const;
-    
-    /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances
      * 
      * To be implemented in a derived class.
@@ -120,31 +112,26 @@ public:
  * 
  * Deviations computed for different measurements are summed up resulting in a combined loss
  * function, which can then be minimized to fit parameters of the jet correction. The interface for
- * a minimization package is implemented with method EvalRawInput.
- * 
- * In the context of minimization of the loss function, nuisance parameters are split into two
- * groups. Marginalized nuisances are allowed to float in the fit, and thus they are treated in the
- * same way as the sought-for parameters of the jet correction. Remaining nuisances are fixed as
- * external parameters. They are not modified with EvalRawInput and should instead be set using
- * method SetExternalNuisances. In this implementation no marginalized nuisances are included; they
- * can be added in a derived class.
+ * a minimization package is implemented with method EvalRawInput. All nuisance parameters are
+ * marginalized.
  */
 class CombLossFunction
 {
 public:
     /**
-     * \brief Constructor
+     * \brief Constructor from a correction and definitions of nuisances
      * 
      * JetCorrBase object is owned by this.
      */
-    CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector);
+    CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector,
+      NuisanceDefinitions const &nuisanceDefs);
     
     /**
-     * \brief Constructor
+     * \brief Constructor from a correction and definitions of nuisances
      * 
      * JetCorrBase object is owned by this.
      */
-    CombLossFunction(JetCorrBase *corrector);
+    CombLossFunction(JetCorrBase *corrector, NuisanceDefinitions const &nuisanceDefs);
     
     virtual ~CombLossFunction() = default;
     
@@ -172,12 +159,6 @@ public:
      */
     virtual unsigned GetNumParams() const;
     
-    /// Returns internal copy of nuisance parameters
-    Nuisances const &GetNuisances() const;
-    
-    /// Returns internal copy of nuisance parameters
-    Nuisances &GetNuisances();
-    
     /// Wrapper for EvalRawInput that checks the size of the given vector
     double Eval(std::vector<double> const &x) const;
     
@@ -186,8 +167,6 @@ public:
      * 
      * This method is intended to be used outside of the context of the fit, for instance, to
      * perform a scan over some parameters.
-     * 
-     * Provided values of nuisances are saved by calling method SetExternalNuisances.
      */
     double Eval(std::vector<double> const &corrParams, Nuisances const &nuisances) const;
     
@@ -196,11 +175,7 @@ public:
      * 
      * Evaluates the combined loss function for the given point. The argument is a pointer to an
      * array, which contains values of the parameters of the jet correction followed by
-     * marginalized nuisances. Values for other nuisance parameters, which are externalized in the
-     * fit, are taken from the internal state set by method SetExternalNuisances.
-     * 
-     * In this implementation no marginalized nuisances are included, which can be changed in a
-     * derived class.
+     * marginalized nuisances. 
      */
     virtual double EvalRawInput(double const *x) const;
     
@@ -214,3 +189,4 @@ protected:
     /// Non-owning pointers to individual contributing measurements
     std::vector<MeasurementBase const *> measurements;
 };
+

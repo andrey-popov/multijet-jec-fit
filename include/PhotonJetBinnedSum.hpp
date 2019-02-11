@@ -2,6 +2,8 @@
 
 #include <FitBase.hpp>
 
+#include <Nuisances.hpp>
+
 #include <TH1.h>
 #include <TH2.h>
 #include <TProfile.h>
@@ -37,7 +39,8 @@ public:
     
 public:
     /// Constructor
-    PhotonJetBinnedSum(std::string const &fileName, Method method);
+    PhotonJetBinnedSum(std::string const &fileName, Method method,
+      NuisanceDefinitions &nuisanceDefs);
     
 public:
     /**
@@ -46,13 +49,6 @@ public:
      * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
-    
-    /**
-     * \brief Returns names of nuisance parameters
-     * 
-     * Reimplemented from MeasurementBase.
-     */
-    virtual std::set<std::string> GetNuisances() const override;
     
     /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances

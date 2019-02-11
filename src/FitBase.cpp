@@ -106,28 +106,21 @@ std::ostream &operator<<(std::ostream &os, JetCorrBase const &corrector)
 }
 
 
-std::set<std::string> MeasurementBase::GetNuisances() const
-{
-    return std::set<std::string>();
-}
-
-
-CombLossFunction::CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector_):
-    corrector(std::move(corrector_))
+CombLossFunction::CombLossFunction(std::unique_ptr<JetCorrBase> &&corrector_,
+  NuisanceDefinitions const &nuisanceDefs):
+    corrector(std::move(corrector_)), nuisances(nuisanceDefs)
 {}
 
 
-CombLossFunction::CombLossFunction(JetCorrBase *corrector_):
-    corrector(corrector_)
+CombLossFunction::CombLossFunction(JetCorrBase *corrector_,
+  NuisanceDefinitions const &nuisanceDefs):
+    corrector(corrector_), nuisances(nuisanceDefs)
 {}
 
 
 void CombLossFunction::AddMeasurement(MeasurementBase const *measurement)
 {
     measurements.emplace_back(measurement);
-    
-    for (auto const &nuisance: measurement->GetNuisances())
-        nuisances.Register(nuisance);
 }
 
 
@@ -145,18 +138,6 @@ unsigned CombLossFunction::GetNDF() const
 unsigned CombLossFunction::GetNumParams() const
 {
     return corrector->GetNumParams() + nuisances.GetNumParams();
-}
-
-
-Nuisances const &CombLossFunction::GetNuisances() const
-{
-    return nuisances;
-}
-
-
-Nuisances &CombLossFunction::GetNuisances()
-{
-    return nuisances;
 }
 
 
@@ -207,3 +188,4 @@ double CombLossFunction::EvalRawInput(double const *x) const
     
     return loss;
 }
+

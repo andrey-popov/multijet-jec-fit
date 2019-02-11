@@ -12,7 +12,9 @@ ROOT.gInterpreter.Declare('#include <JetCorrDefinitions.hpp>')
 ROOT.gInterpreter.Declare('#include <MultijetCrawlingBins.hpp>')
 ROOT.gInterpreter.Declare('#include <PythonWrapping.hpp>')
 ROOT.gSystem.Load(os.path.join(_location, 'lib', 'libjecfit.so'))
-ROOT.gSystem.Load(os.path.join(_location, 'lib', 'libjecfit_pythonwrapping.so'))
+ROOT.gSystem.Load(os.path.join(
+    _location, 'lib', 'libjecfit_pythonwrapping.so')
+)
 
 JetCorrStd2P = ROOT.JetCorrStd2P
 JetCorrStd2P.__doc__ = """L3Res correction with two parameters."""
@@ -34,9 +36,14 @@ class MultijetChi2:
         else:
             raise RuntimeError('Unsupported method "{}".'.format(method))
         
-        self.measurement = ROOT.MultijetCrawlingBins(file_path, method_code)
+        self._nuisance_defs = ROOT.NuisanceDefinitions()
+        self.measurement = ROOT.MultijetCrawlingBins(
+            file_path, method_code, self._nuisance_defs
+        )
         self._jet_corr = ROOT.JetCorrStd2P()
-        self._loss_func = ROOT.CombLossFunction(self._jet_corr)
+        self._loss_func = ROOT.CombLossFunction(
+            self._jet_corr, self._nuisance_defs
+        )
         self._loss_func.AddMeasurement(self.measurement)
     
     
@@ -54,7 +61,10 @@ class MultijetChi2:
             Value of chi^2.
         """
         
-        if nuisances == 'profile' and self._loss_func.GetNuisances().GetNumParams() > 0:
+        if (
+            nuisances == 'profile' and
+            self._nuisance_defs.GetNumParams() > 0
+        ):
             minimizer = self._setup_minimizer()
             
             for i in range(2):
@@ -110,14 +120,16 @@ class MultijetChi2:
         minimizer.SetPrintLevel(print_level)
         
         num_params = self._loss_func.GetNumParams()
-        num_poi = num_params - self._loss_func.GetNuisances().GetNumParams()
+        num_poi = num_params - self._nuisance_defs.GetNumParams()
         
         for i in range(num_poi):
             minimizer.SetVariable(i, 'p{:d}'.format(i), 0., 1e-2)
             minimizer.SetVariableLimits(i, -1., 1.)
         
         for i in range(num_poi, num_params):
-            minimizer.SetVariable(i, self._loss_func.GetNuisances().GetName(i - num_poi), 0., 1.)
+            minimizer.SetVariable(
+                i, self._nuisance_defs.GetName(i - num_poi), 0., 1.
+            )
             minimizer.SetVariableLimits(i, -5., 5.)
         
         return minimizer
@@ -134,4 +146,7 @@ class FitResults:
         self.vars = []
         
         for p in minimizer.State().MinuitParameters():
-            self.vars.append(FitResults.Variable(p.Name(), p.Value(), p.Error()))
+            self.vars.append(
+                FitResults.Variable(p.Name(), p.Value(), p.Error())
+            )
+

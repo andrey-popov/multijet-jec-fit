@@ -10,7 +10,8 @@
 using namespace std::string_literals;
 
 
-PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method):
+PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method,
+  NuisanceDefinitions &nuisanceDefs):
     photonScaleVar(0.01)  // a dummy value
 {
     std::string methodLabel;
@@ -49,18 +50,15 @@ PhotonJetRun1::PhotonJetRun1(std::string const &fileName, Method method):
         
         bins.push_back(bin);
     }
+
+
+    nuisanceDefs.Register("PhotonScale");
 }
 
 
 unsigned PhotonJetRun1::GetDim() const
 {
     return bins.size();
-}
-
-
-std::set<std::string> PhotonJetRun1::GetNuisances() const
-{
-    return std::set<std::string>{"PhotonScale"};
 }
 
 
@@ -81,3 +79,4 @@ double PhotonJetRun1::Eval(JetCorrBase const &corrector, Nuisances const &nuisan
     
     return chi2;
 }
+

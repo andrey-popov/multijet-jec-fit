@@ -2,6 +2,8 @@
 
 #include <FitBase.hpp>
 
+#include <Nuisances.hpp>
+
 #include <set>
 #include <vector>
 
@@ -45,7 +47,7 @@ private:
     
 public:
     /// Constructor
-    PhotonJetRun1(std::string const &fileName, Method method);
+    PhotonJetRun1(std::string const &fileName, Method method, NuisanceDefinitions &nuisanceDefs);
     
 public:
     /**
@@ -54,13 +56,6 @@ public:
      * Implemented from MeasurementBase.
      */
     virtual unsigned GetDim() const override;
-    
-    /**
-     * \brief Returns names of nuisance parameters
-     * 
-     * Reimplemented from MeasurementBase.
-     */
-    virtual std::set<std::string> GetNuisances() const override;
     
     /**
      * \brief Evaluates the deviation with the given jet corrector and set of nuisances
