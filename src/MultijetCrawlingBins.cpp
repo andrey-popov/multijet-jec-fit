@@ -103,7 +103,7 @@ double MultijetCrawlingBins::JetCache::JetWeight(double pt) const
 
 MultijetCrawlingBins::Chi2Bin::Chi2Bin(MultijetCrawlingBins::Method method, unsigned firstBin_,
   unsigned lastBin_, std::shared_ptr<TH1> ptLeadHist_, std::shared_ptr<TProfile> mpfProfile_,
-  std::shared_ptr<TH2> sumProj_, std::shared_ptr<TSpline3> simBalSpline_, double unc2_):
+  std::shared_ptr<TH2> sumProj_, std::shared_ptr<Spline> simBalSpline_, double unc2_):
     firstBin(firstBin_), lastBin(lastBin_),
     ptLeadHist(ptLeadHist_), mpfProfile(mpfProfile_), sumProj(sumProj_),
     simBalSpline(simBalSpline_), unc2(unc2_),
@@ -116,26 +116,56 @@ MultijetCrawlingBins::Chi2Bin::Chi2Bin(MultijetCrawlingBins::Method method, unsi
 }
 
 
-double MultijetCrawlingBins::Chi2Bin::Chi2() const
+void MultijetCrawlingBins::Chi2Bin::AddDataSyst(unsigned nuisanceIndex, double up, double down)
 {
-    return std::pow(MeanBalance() - MeanSimBalance(), 2) / unc2;
+    if (dataVariations.count(nuisanceIndex) > 0)
+    {
+        std::ostringstream message;
+        message << "MultijetCrawlingBins::Chi2Bin::AddDataSyst: Systematic variation in data for "
+          "the nuisance parameter with index " << nuisanceIndex << " has already been registered.";
+        throw std::runtime_error(message.str());
+    }
+
+    dataVariations[nuisanceIndex] = PointMorph(0., up, down);
 }
 
 
-double MultijetCrawlingBins::Chi2Bin::MeanBalance() const
+void MultijetCrawlingBins::Chi2Bin::AddSimSyst(unsigned nuisanceIndex, std::shared_ptr<Spline> up,
+  std::shared_ptr<Spline> down)
 {
-    return (this->*meanBalanceCalc)();
+    if (simVariations.count(nuisanceIndex) > 0)
+    {
+        std::ostringstream message;
+        message << "MultijetCrawlingBins::Chi2Bin::AddSimSyst: Systematic variation in simulation "
+          "for the nuisance parameter with index " << nuisanceIndex << " has already been "
+          "registered.";
+        throw std::runtime_error(message.str());
+    }
+
+    simVariations[nuisanceIndex] = std::array<std::shared_ptr<Spline>, 2>{up, down};
 }
 
 
-double MultijetCrawlingBins::Chi2Bin::MeanSimBalance() const
+double MultijetCrawlingBins::Chi2Bin::Chi2(Nuisances const &nuisances) const
+{
+    return std::pow(MeanBalance(nuisances) - MeanSimBalance(nuisances), 2) / unc2;
+}
+
+
+double MultijetCrawlingBins::Chi2Bin::MeanBalance(Nuisances const &nuisances) const
+{
+    return (this->*meanBalanceCalc)(nuisances);
+}
+
+
+double MultijetCrawlingBins::Chi2Bin::MeanSimBalance(Nuisances const &nuisances) const
 {
     double sumBal = 0., numEvents = 0.;
     
     for (unsigned binPtLead = firstBin; binPtLead <= lastBin; ++binPtLead)
     {
         double const n = ptLeadHist->GetBinContent(binPtLead);
-        sumBal += SimBalance(jetCache->CorrectedMeanPtLead(binPtLead)) * n;
+        sumBal += SimBalance(jetCache->CorrectedMeanPtLead(binPtLead), nuisances) * n;
         numEvents += n;
     }
     
@@ -149,9 +179,24 @@ std::pair<double, double> MultijetCrawlingBins::Chi2Bin::PtRange() const
 }
 
 
-double MultijetCrawlingBins::Chi2Bin::SimBalance(double ptLead) const
+double MultijetCrawlingBins::Chi2Bin::SimBalance(double ptLead, Nuisances const &nuisances) const
 {
-    return simBalSpline->Eval(std::log(ptLead));
+    double const logPt = std::log(ptLead);
+    double meanBalance = simBalSpline->Eval(logPt);
+
+
+    // Apply systematic variations
+    for (auto const &syst: simVariations)
+    {
+        // Reference up and down relative deviations for the current uncertainty
+        double const up = syst.second[0]->Eval(logPt);
+        double const down = syst.second[1]->Eval(logPt);
+
+        // Interpolate between them and apply the resulting deviation
+        meanBalance *= 1 + PointMorph::Morph(0, up, down, nuisances[syst.first]);
+    }
+
+    return meanBalance;
 }
 
 
@@ -161,8 +206,9 @@ void MultijetCrawlingBins::Chi2Bin::SetJetCache(JetCache const *jetCache_)
 }
 
 
-double MultijetCrawlingBins::Chi2Bin::MeanMPF() const
+double MultijetCrawlingBins::Chi2Bin::MeanMPF(Nuisances const &nuisances) const
 {
+    // Compute nominal mean MPF balance
     double sumBal = 0.;
     double numEvents = 0.;
     
@@ -183,12 +229,23 @@ double MultijetCrawlingBins::Chi2Bin::MeanMPF() const
         numEvents += ptLeadHist->GetBinContent(binPtLead);
     }
     
-    return sumBal / numEvents;
+    double meanBalance = sumBal / numEvents;
+
+
+    // Apply systematic variations
+    for (auto const &syst: dataVariations)
+    {
+        double const deviation = syst.second(nuisances[syst.first]);
+        meanBalance *= 1 + deviation;
+    }
+
+    return meanBalance;
 }
 
 
-double MultijetCrawlingBins::Chi2Bin::MeanPtBal() const
+double MultijetCrawlingBins::Chi2Bin::MeanPtBal(Nuisances const &nuisances) const
 {
+    // Compute nominal pt balance
     double sumBal = 0.;
     double numEvents = 0.;
     
@@ -206,7 +263,17 @@ double MultijetCrawlingBins::Chi2Bin::MeanPtBal() const
         numEvents += ptLeadHist->GetBinContent(binPtLead);
     }
     
-    return sumBal / numEvents;
+    double meanBalance = sumBal / numEvents;
+
+
+    // Apply systematic variations
+    for (auto const &syst: dataVariations)
+    {
+        double const deviation = syst.second(nuisances[syst.first]);
+        meanBalance *= 1 + deviation;
+    }
+
+    return meanBalance;
 }
 
 
@@ -296,7 +363,7 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
     
     // Read splines to compute mean value of the balance observable in simulation. They are
     // provided separately for different trigger bins.
-    std::vector<std::pair<double, std::shared_ptr<TSpline3>>> simBalSplines;
+    std::vector<std::pair<double, std::shared_ptr<Spline>>> simBalSplines;
     
     TIter fileIter(inputFile->GetListOfKeys());
     TKey *key;
@@ -321,7 +388,7 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
         }
         
         std::unique_ptr<TVectorD> range(dynamic_cast<TVectorD *>(directory->Get("Range")));
-        simBalSplines.emplace_back(std::make_pair((*range)[0], dynamic_cast<TSpline3 *>(
+        simBalSplines.emplace_back(std::make_pair((*range)[0], dynamic_cast<Spline *>(
           directory->Get(("Sim" + methodLabel).c_str()))));
     }
     
@@ -414,7 +481,7 @@ unsigned MultijetCrawlingBins::GetDim() const
 }
 
 
-double MultijetCrawlingBins::Eval(JetCorrBase const &corrector, Nuisances const &) const
+double MultijetCrawlingBins::Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const
 {
     jetCache->Update(corrector);
     double chi2 = 0.;
@@ -422,7 +489,7 @@ double MultijetCrawlingBins::Eval(JetCorrBase const &corrector, Nuisances const 
     for (unsigned i = 0; i < chi2Bins.size(); ++i)
     {
         if (chi2BinMask[i])
-            chi2 += chi2Bins[i].Chi2();
+            chi2 += chi2Bins[i].Chi2(nuisances);
     }
     
     return chi2;
