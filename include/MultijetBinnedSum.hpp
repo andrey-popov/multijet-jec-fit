@@ -2,7 +2,7 @@
 
 #include <FitBase.hpp>
 
-#include <HistMorph.hpp>
+#include <Morphing.hpp>
 
 #include <TH1.h>
 #include <TH1D.h>

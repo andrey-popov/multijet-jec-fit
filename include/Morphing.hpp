@@ -6,6 +6,50 @@
 
 
 /**
+ * \class PointMorph
+ * \brief Performs three-point morphing
+ *
+ * For a triplet of reference points, this class implements a smooth interpolation between them and
+ * a linear extrapolation.
+ */
+class PointMorph
+{
+public:
+    /// Trivial default constructor
+    PointMorph() = default;
+
+    /// Constructor from central, up, and down reference points
+    PointMorph(double central, double up, double down);
+
+public:
+    /**
+     * \brief Computes interpolated/extrapolated value
+     * 
+     * Reference central, up, and down values are reproduced for x = 0, +1, -1.
+     */
+    double Eval(double x) const;
+
+    /**
+     * \brief Implementation of three-point interpolation and extrapolation
+     *
+     * Perform the morphing based on the three reference points. The reference values are
+     * reproduced for x = 0, +1, -1.
+     */
+    static double Morph(double central, double up, double down, double x);
+
+    /// Alias for method Eval
+    double operator()(double x) const;
+    
+    /// Smooth step function
+    static double SmoothStep(double x);
+
+private:
+    /// Reference points
+    double central, up, down;
+};
+
+
+/**
  * \class HistMorph
  * \brief Performs three-point morphing of histograms
  * 
@@ -48,10 +92,8 @@ public:
      */
     double Eval(unsigned bin, double x) const;
     
-    /// Smooth step function
-    static double SmoothStep(double x);
-    
 private:
-    /// Reference points
-    std::vector<double> central, up, down;
+    /// Morphing objects for individual bins
+    std::vector<PointMorph> bins;
 };
+
