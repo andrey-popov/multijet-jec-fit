@@ -112,7 +112,8 @@ int main(int argc, char **argv)
         auto *measurement = new MultijetCrawlingBins(
           optionsMap["multijet-crawlingbins"].as<string>(),
           (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal,
-          nuisanceDefs);
+          nuisanceDefs, {"JER"});
+        // JER uncertainty is not considered as the corresponding L2Res variations are buggy
         measurement->SetPtLeadRange(0., 1600.);
         measurements.emplace_back(measurement);
     }
@@ -165,7 +166,7 @@ int main(int argc, char **argv)
         cerr << "No measurements requested.\n";
         return EXIT_FAILURE;
     }
-    
+
     
     // Construct an object to evaluate the loss function
     auto jetCorr = make_unique<JetCorrStd2P>();

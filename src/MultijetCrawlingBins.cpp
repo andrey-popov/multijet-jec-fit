@@ -286,7 +286,8 @@ double MultijetCrawlingBins::Chi2Bin::MeanPtBal(Nuisances const &nuisances) cons
 
 
 MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
-  MultijetCrawlingBins::Method method_, NuisanceDefinitions &nuisanceDefs):
+  MultijetCrawlingBins::Method method_, NuisanceDefinitions &nuisanceDefs,
+  std::set<std::string> systToExclude):
     method(method_)
 {
     std::string methodLabel;
@@ -417,6 +418,10 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
             continue;
 
         std::string const systLabel(matchResult[1]);
+
+        if (systToExclude.count(systLabel) > 0)
+            continue;
+
         std::unique_ptr<TH1> histUp(dynamic_cast<TH1 *>(key->ReadObj()));
         std::unique_ptr<TH1> histDown(dynamic_cast<TH1 *>(inputFile->Get(
           ("RelVar_" + methodLabel + "_" + systLabel + "Down").c_str())));
@@ -476,6 +481,10 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
                 continue;
 
             std::string const systLabel(matchResult[1]);
+
+            if (systToExclude.count(systLabel) > 0)
+                continue;
+
             std::shared_ptr<Spline> splineUp(dynamic_cast<Spline *>(subKey->ReadObj()));
             std::shared_ptr<Spline> splineDown(dynamic_cast<Spline *>(
               directory->Get(("RelVar_Sim" + methodLabel + "_" + systLabel + "Down").c_str())));

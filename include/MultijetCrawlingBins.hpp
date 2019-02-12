@@ -13,6 +13,7 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include <utility>
@@ -38,7 +39,7 @@
  * bins.
  *
  * All systematic variations found in the input file are applied (separately for data and
- * simulation).
+ * simulation). However, user can disable selected ones by providing their names to the constructor.
  *
  * The class can also construct histograms with mean values of the chosen balance observables for
  * the given jet correction and set of nuisance parameters. This is done with methods
@@ -302,10 +303,11 @@ public:
      *
      * \param fileName  Path to ROOT file with inputs.
      * \param method  Computation method.
-     * \nuisanceDefs  Object that will collect requested nuisance parameters.
+     * \param nuisanceDefs  Object that will collect requested nuisance parameters.
+     * \param systToExclude  Labels of systematic uncertainties that should not be included.
      */
     MultijetCrawlingBins(std::string const &fileName, Method method,
-      NuisanceDefinitions &nuisanceDefs);
+      NuisanceDefinitions &nuisanceDefs, std::set<std::string> systToExclude = {});
     
 public:
     /**
