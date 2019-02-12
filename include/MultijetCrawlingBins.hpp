@@ -39,6 +39,10 @@
  *
  * All systematic variations found in the input file are applied (separately for data and
  * simulation).
+ *
+ * The class can also construct histograms with mean values of the chosen balance observables for
+ * the given jet correction and set of nuisance parameters. This is done with methods
+ * RecomputeBalanceData and RecomputeBalanceSim.
  * 
  * [1] https://indico.cern.ch/event/780845/#16-multijet-analysis-with-craw
  */
@@ -218,6 +222,9 @@ private:
         
         /// Updates JetCache object used in the computations
         void SetJetCache(JetCache const *jetCache);
+
+        /// Returns statistical uncertainty in data
+        double Uncertainty() const;
     
     private:
         /// Implements computation of mean value of the MPF observable in data
@@ -314,6 +321,27 @@ public:
      * Implemented from MeasurementBase.
      */
     virtual double Eval(JetCorrBase const &corrector, Nuisances const &nuisances) const override;
+
+    /**
+     * Recompute mean balance observable in data for given jet correction and nuisances
+     *
+     * Return a TH1D histogram that represents mean values of the balance observable as a function
+     * of pt of the leading jet. The same binning as for chi^2 bins is used. All chi^2 bins are
+     * included, regardless of their mask statuses. The uncertainty in each bin is set to the
+     * statistical uncertainty of the input mean values; as a result, it is not affected by the
+     * given jet correction. The histogram is not associated with any ROOT directory.
+     */
+    TH1D RecomputeBalanceData(JetCorrBase const &corrector, Nuisances const &nuisances) const;
+    
+    /**
+     * Recompute mean balance observable in simulation for given jet correction and nuisances
+     *
+     * Return a TH1D histogram that represents mean values of the balance observable as a function
+     * of pt of the leading jet. The same binning as for chi^2 bins is used. All chi^2 bins are
+     * included, regardless of their mask statuses. The uncertainties are set to zero. The histogram
+     * is not associated with any ROOT directory.
+     */
+    TH1D RecomputeBalanceSim(JetCorrBase const &corrector, Nuisances const &nuisances) const;
     
     /**
      * Restricts computation to given range in pt of the leading jet

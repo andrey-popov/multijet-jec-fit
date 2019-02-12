@@ -207,6 +207,12 @@ void MultijetCrawlingBins::Chi2Bin::SetJetCache(JetCache const *jetCache_)
 }
 
 
+double MultijetCrawlingBins::Chi2Bin::Uncertainty() const
+{
+    return std::sqrt(unc2);
+}
+
+
 double MultijetCrawlingBins::Chi2Bin::MeanMPF(Nuisances const &nuisances) const
 {
     // Compute nominal mean MPF balance
@@ -617,6 +623,58 @@ double MultijetCrawlingBins::Eval(JetCorrBase const &corrector, Nuisances const 
     }
     
     return chi2;
+}
+
+
+TH1D MultijetCrawlingBins::RecomputeBalanceData(JetCorrBase const &corrector,
+  Nuisances const &nuisances) const
+{
+    std::vector<double> binning;
+    binning.reserve(chi2Bins.size() + 1);
+
+    for (auto const &chi2Bin: chi2Bins)
+        binning.emplace_back(chi2Bin.PtRange().first);
+
+    binning.emplace_back(chi2Bins[chi2Bins.size() - 1].PtRange().second);
+
+
+    TH1D histBalance("MeanBalance", "", binning.size() - 1, binning.data());
+    histBalance.SetDirectory(nullptr);
+
+    jetCache->Update(corrector);
+
+    for (unsigned i = 0; i < chi2Bins.size(); ++i)
+    {
+        histBalance.SetBinContent(i + 1, chi2Bins[i].MeanBalance(nuisances));
+        histBalance.SetBinError(i + 1, chi2Bins[i].Uncertainty());
+    }
+
+    return histBalance;
+}
+
+
+TH1D MultijetCrawlingBins::RecomputeBalanceSim(JetCorrBase const &corrector,
+  Nuisances const &nuisances) const
+{
+    std::vector<double> binning;
+    binning.reserve(chi2Bins.size() + 1);
+
+    for (auto const &chi2Bin: chi2Bins)
+        binning.emplace_back(chi2Bin.PtRange().first);
+
+    binning.emplace_back(chi2Bins[chi2Bins.size() - 1].PtRange().second);
+
+
+    TH1D histBalance("MeanBalance", "", binning.size() - 1, binning.data());
+    histBalance.SetDirectory(nullptr);
+
+    // Update jet cache as this determines positions in pt at which the splines are evaluated
+    jetCache->Update(corrector);
+
+    for (unsigned i = 0; i < chi2Bins.size(); ++i)
+        histBalance.SetBinContent(i + 1, chi2Bins[i].MeanSimBalance(nuisances));
+
+    return histBalance;
 }
 
 
