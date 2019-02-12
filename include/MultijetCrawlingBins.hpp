@@ -36,6 +36,9 @@
  * histograms are filled separately for different triggers, which are mapped to non-overlapping
  * ranges in pt of the leading jet. Corresponding groups of chi^2 bins are referred to as trigger
  * bins.
+ *
+ * All systematic variations found in the input file are applied (separately for data and
+ * simulation).
  * 
  * [1] https://indico.cern.ch/event/780845/#16-multijet-analysis-with-craw
  */

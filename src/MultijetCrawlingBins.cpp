@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <regex>
 #include <sstream>
 #include <stdexcept>
 
@@ -279,7 +280,7 @@ double MultijetCrawlingBins::Chi2Bin::MeanPtBal(Nuisances const &nuisances) cons
 
 
 MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
-  MultijetCrawlingBins::Method method_, NuisanceDefinitions &):
+  MultijetCrawlingBins::Method method_, NuisanceDefinitions &nuisanceDefs):
     method(method_)
 {
     std::string methodLabel;
@@ -396,6 +397,109 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
     std::sort(simBalSplines.begin(), simBalSplines.end(),
       [](auto const &lhs, auto const &rhs){return (lhs.first < rhs.first);});
     
+    
+    // Read systematic variations in data
+    std::map<std::string, std::array<std::unique_ptr<TH1>, 2>> dataVariations;
+    
+    std::regex dataSystRegex("RelVar_" + methodLabel + "_(.+)Up", std::regex::extended);
+    std::cmatch matchResult;
+    fileIter = inputFile->GetListOfKeys();
+
+    while ((key = dynamic_cast<TKey *>(fileIter())))
+    {
+        if (not std::regex_match(key->GetName(), matchResult, dataSystRegex))
+            continue;
+
+        std::string const systLabel(matchResult[1]);
+        std::unique_ptr<TH1> histUp(dynamic_cast<TH1 *>(key->ReadObj()));
+        std::unique_ptr<TH1> histDown(dynamic_cast<TH1 *>(inputFile->Get(
+          ("RelVar_" + methodLabel + "_" + systLabel + "Down").c_str())));
+
+        if (not histUp or not histDown)
+        {
+            std::ostringstream message;
+            message << "MultijetCrawlingBins::MultijetCrawlingBins: Failed to read systematic "
+              "variation \"" << systLabel << "\" for data.";
+            throw std::runtime_error(message.str());
+        }
+
+        int const numBins = binning->GetNoElements() - 1;
+
+        if (histUp->GetNbinsX() != numBins or histDown->GetNbinsX() != numBins)
+        {
+            std::ostringstream message;
+            message << "MultijetCrawlingBins::MultijetCrawlingBins: Number of bins in histograms "
+              "that define systematic variation \"" << systLabel << "\" in data, does not agree "
+              "with the given chi^2 binning.";
+            throw std::runtime_error(message.str());
+        }
+
+        histUp->SetDirectory(nullptr);
+        histDown->SetDirectory(nullptr);
+
+        dataVariations[systLabel] = std::array<std::unique_ptr<TH1>, 2>{
+          std::move(histUp), std::move(histDown)};
+    }
+
+
+    // Read systematic variations in simulation. A single variation is descibed by an array of two
+    // splines (which are wrapped into shared_ptr). The variations are associated with the lower
+    // boundaries of the corresponding trigger bins, using an std::pair, and put into an ordered
+    // vector. The vectors for different systematic uncertainties are aggregated in a map, whose
+    // keys are the labels of the uncertainties.
+    std::map<std::string, std::vector<std::pair<double, std::array<std::shared_ptr<Spline>, 2>>>>
+      simVariations;
+
+    std::regex simSystRegex("RelVar_Sim" + methodLabel + "_(.+)Up", std::regex::extended);
+    fileIter = inputFile->GetListOfKeys();
+
+    while ((key = dynamic_cast<TKey *>(fileIter())))
+    {
+        if (key->GetClassName() != "TDirectoryFile"s)
+            continue;
+        
+        TDirectoryFile *directory = dynamic_cast<TDirectoryFile *>(key->ReadObj());
+        std::unique_ptr<TVectorD> range(dynamic_cast<TVectorD *>(directory->Get("Range")));
+        
+        TIter dirIter(directory->GetListOfKeys());
+        TKey *subKey;
+
+        while ((subKey = dynamic_cast<TKey *>(dirIter())))
+        {
+            if (not std::regex_match(subKey->GetName(), matchResult, simSystRegex))
+                continue;
+
+            std::string const systLabel(matchResult[1]);
+            std::shared_ptr<Spline> splineUp(dynamic_cast<Spline *>(subKey->ReadObj()));
+            std::shared_ptr<Spline> splineDown(dynamic_cast<Spline *>(
+              directory->Get(("RelVar_Sim" + methodLabel + "_" + systLabel + "Down").c_str())));
+
+            if (not splineUp or not splineDown)
+            {
+                std::ostringstream message;
+                message << "MultijetCrawlingBins::MultijetCrawlingBins: Failed to read systematic "
+                  "variation \"" << systLabel << "\" for simulation.";
+                throw std::runtime_error(message.str());
+            }
+
+            std::array<std::shared_ptr<Spline>, 2> splinePair{splineUp, splineDown};
+
+            if (simVariations.find(systLabel) == simVariations.end())
+                simVariations.emplace(std::piecewise_construct, std::forward_as_tuple(systLabel),
+                  std::forward_as_tuple());
+
+            simVariations[systLabel].emplace_back((*range)[0], splinePair);
+        }
+    }
+
+    // Sort vectors for all systematic uncertainties in simulation according to the lower bounds of
+    // the pt ranges of the corresponding trigger bins
+    for (auto &syst: simVariations)
+    {
+        std::sort(syst.second.begin(), syst.second.end(),
+          [](auto const &lhs, auto const &rhs){return (lhs.first < rhs.first);});
+    }
+
     inputFile->Close();
     
     
@@ -433,10 +537,30 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
           (*binning)[binChi2 - 1] + eps,
           [](auto const &lhs, double const &rhs){return (lhs.first < rhs);});
         --simBalSplineIt;
+        unsigned const splineIndex = std::distance(simBalSplines.begin(), simBalSplineIt);
         
-        chi2Bins.emplace_back(method, firstBin, lastBin, ptLeadHist,
+        Chi2Bin curChi2Bin(method, firstBin, lastBin, ptLeadHist,
           (method == MultijetCrawlingBins::Method::MPF) ? balProfile : nullptr,
           sumProj, simBalSplineIt->second, std::pow(balProfileRebinned->GetBinError(binChi2), 2));
+
+
+        // Add systematic variations for the newly constructed bin
+        for (auto const &syst: dataVariations)
+        {
+            unsigned const systIndex = nuisanceDefs.Register(syst.first);
+            curChi2Bin.AddDataSyst(systIndex,
+              syst.second[0]->GetBinContent(binChi2), syst.second[1]->GetBinContent(binChi2));
+        }
+
+        for (auto const &syst: simVariations)
+        {
+            unsigned const systIndex = nuisanceDefs.Register(syst.first);
+            auto const &splinePair = syst.second.at(splineIndex).second;
+            curChi2Bin.AddSimSyst(systIndex, splinePair[0], splinePair[1]);
+        }
+
+
+        chi2Bins.emplace_back(curChi2Bin);
     }
     
     if (chi2Bins.empty())
