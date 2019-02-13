@@ -26,7 +26,7 @@ class MultijetChi2:
     The standard correction with two parameters is used.
     """
     
-    def __init__(self, file_path, method):
+    def __init__(self, file_path, method, exclude_syst=set()):
         """Initialize from input ROOT file and method label."""
         
         if method == 'PtBal':
@@ -35,10 +35,16 @@ class MultijetChi2:
             method_code = 1
         else:
             raise RuntimeError('Unsupported method "{}".'.format(method))
+
+        exclude_syst_converted = ROOT.std.set('std::string')()
+
+        for syst in exclude_syst:
+            exclude_syst_converted.insert(syst)
         
         self._nuisance_defs = ROOT.NuisanceDefinitions()
         self.measurement = ROOT.MultijetCrawlingBins(
-            file_path, method_code, self._nuisance_defs
+            file_path, method_code, self._nuisance_defs,
+            exclude_syst_converted
         )
         self._jet_corr = ROOT.JetCorrStd2P()
         self._loss_func = ROOT.CombLossFunction(

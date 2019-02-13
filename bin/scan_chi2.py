@@ -71,7 +71,9 @@ if __name__ == '__main__':
         method_label = 'MPF'
     
     
-    loss_func = jecfit.MultijetChi2(args.multijet_crawlingbins, args.method)
+    loss_func = jecfit.MultijetChi2(
+        args.multijet_crawlingbins, args.method, {'JER'}
+    )
     loss_func.set_pt_range(0., 1.6e3)
     fit_results = loss_func.fit()
     
