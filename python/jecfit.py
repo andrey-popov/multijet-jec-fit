@@ -89,6 +89,46 @@ class MultijetChi2:
             x[2:] = nuisances
             
             return self._loss_func_wrapper(x)
+
+
+    def compute_residuals(self, params, nuisances):
+        """Compute data-to-simulation residuals.
+
+        Arguments:
+            params:  array_like with values of POI.
+            nuisances:  dict or an array_like with values of nuisances.
+
+        Return value:
+            Tuple of NumPy arrays representing a graph with residuals.
+        """
+
+        params = np.asarray(params)
+        self._jet_corr.SetParams(params)
+
+        conv_nuisances = ROOT.Nuisances(self._nuisance_defs)
+
+        if isinstance(nuisances, dict):
+            for label, value in nuisances.items():
+                conv_nuisances[label] = value
+        else:
+            for i in range(len(nuisances)):
+                conv_nuisances[i] = nuisances[i]
+
+        graph = self.measurement.ComputeResiduals(
+            self._jet_corr, conv_nuisances
+        )
+
+        n = graph.GetN()
+        x, y, yerr = np.empty(n), np.empty(n), np.empty(n)
+
+        for i in range(n):
+            x_val, y_val = ROOT.Double(), ROOT.Double()
+            graph.GetPoint(i, x_val, y_val)
+            x[i] = x_val
+            y[i] = y_val
+            yerr[i] = graph.GetErrorY(i)
+
+        return x, y, yerr
     
     
     def fit(self, print_level=3):
