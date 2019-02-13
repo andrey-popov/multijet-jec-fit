@@ -328,10 +328,11 @@ public:
      * Recompute mean balance observable in data for given jet correction and nuisances
      *
      * Return a TH1D histogram that represents mean values of the balance observable as a function
-     * of pt of the leading jet. The same binning as for chi^2 bins is used. All chi^2 bins are
-     * included, regardless of their mask statuses. The uncertainty in each bin is set to the
-     * statistical uncertainty of the input mean values; as a result, it is not affected by the
-     * given jet correction. The histogram is not associated with any ROOT directory.
+     * of pt of the leading jet. The binning is as for the chi^2 bins, but the given jet correction
+     * is applied to it so that the migration in pt of the leading jet is taken into account. All
+     * chi^2 bins are included, regardless of their mask statuses. The uncertainty in each bin is
+     * set to the statistical uncertainty of the input mean values; as a result, it is not affected
+     * by the given jet correction. The histogram is not associated with any ROOT directory.
      */
     TH1D RecomputeBalanceData(JetCorrBase const &corrector, Nuisances const &nuisances) const;
     

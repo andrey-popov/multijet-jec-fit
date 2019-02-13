@@ -638,6 +638,7 @@ double MultijetCrawlingBins::Eval(JetCorrBase const &corrector, Nuisances const 
 TH1D MultijetCrawlingBins::RecomputeBalanceData(JetCorrBase const &corrector,
   Nuisances const &nuisances) const
 {
+    // Read the binning with up to L2Res correction applied
     std::vector<double> binning;
     binning.reserve(chi2Bins.size() + 1);
 
@@ -645,6 +646,11 @@ TH1D MultijetCrawlingBins::RecomputeBalanceData(JetCorrBase const &corrector,
         binning.emplace_back(chi2Bin.PtRange().first);
 
     binning.emplace_back(chi2Bins[chi2Bins.size() - 1].PtRange().second);
+
+
+    // Apply the given L3Res correction to take into account the migration in pt of the leading jet
+    for (auto &edge: binning)
+        edge = corrector.Apply(edge);
 
 
     TH1D histBalance("MeanBalance", "", binning.size() - 1, binning.data());
