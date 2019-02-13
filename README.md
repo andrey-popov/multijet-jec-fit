@@ -17,16 +17,29 @@ The package is tested in environment [LCG_94python3](http://lcginfo.cern.ch/rele
   * GCC 6.2.0
   * Boost 1.66.0
   * ROOT 6.14.04
+  * Python 3.6.5
 
 To build the package and run an example fit program, execute
 
-```bash
+```sh
+source ./env.sh
+
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 cd ..
 
 inputdir="https://aapopov.web.cern.ch/aapopov/jec_inputs/prototype"
-bin/fit --photonjet-run1 $inputdir/photonjet_Run1.root --multijet-binnedsum $inputdir/multijet_BinnedSum.root --zjet-run1 $inputdir/Zjet_Run1.root
+fit --photonjet-run1 $inputdir/photonjet_Run1.root --multijet-binnedsum $inputdir/multijet_BinnedSum.root --zjet-run1 $inputdir/Zjet_Run1.root
 # An input file for the binned-sum version of the photon+jet analysis is also available and called "photonjet_BinnedSum.root"
 ```
+
+There is also a Python script to run the fit, and it should be preferred. However, it only supports the multijet analysis.
+
+Program [`jq`](https://stedolan.github.io/jq/) is useful to work with JSON file with fit results. In particular, multiple files can be merged by running
+
+```sh
+jq -s '.' fit1.json fit2.json > fits.json
+```
+
+Usually the executable for `jq` can just be downloaded and put under `$PATH`; there is no need to build it from source.

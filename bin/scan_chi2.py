@@ -7,7 +7,7 @@ import itertools
 import os
 
 import numpy as np
-from scipy.special import gammainc, gammaincinv
+from scipy.special import gammaincinv
 
 import matplotlib as mpl
 mpl.use('agg')
@@ -50,14 +50,14 @@ if __name__ == '__main__':
     
     arg_parser = argparse.ArgumentParser(__doc__)
     arg_parser.add_argument(
-        '--multijet-crawlingbins', help='File with inputs from multijet analysis'
+        '--multijet', help='File with inputs from multijet analysis'
     )
     arg_parser.add_argument('-m', '--method', default='PtBal', help='Computation method')
     arg_parser.add_argument('-o', '--output', default='fig', help='Directory for produced plots')
     arg_parser.add_argument('-l', '--label', help='Label for plots')
     args = arg_parser.parse_args()
     
-    if not args.multijet_crawlingbins:
+    if not args.multijet:
         raise RuntimeError('No inputs provided.')
     
     try:
@@ -71,9 +71,7 @@ if __name__ == '__main__':
         method_label = 'MPF'
     
     
-    loss_func = jecfit.MultijetChi2(
-        args.multijet_crawlingbins, args.method, {'JER'}
-    )
+    loss_func = jecfit.MultijetChi2(args.multijet, args.method, {'JER'})
     loss_func.set_pt_range(0., 1.6e3)
     fit_results = loss_func.fit()
     
@@ -81,12 +79,12 @@ if __name__ == '__main__':
     # Plot 1D scans along each POI
     for ivar in range(2):
         x = np.empty((101, 2))
-        centre = fit_results.vars[ivar].value
-        half_window = 2. * fit_results.vars[ivar].error
+        centre = fit_results.parameters[ivar].value
+        half_window = 2. * fit_results.parameters[ivar].error
         x[:, ivar] = np.linspace(
             centre - half_window, centre + half_window, num=len(x)
         )
-        x[:, 1 - ivar] = fit_results.vars[1 - ivar].value
+        x[:, 1 - ivar] = fit_results.parameters[1 - ivar].value
         
         chi2 = np.empty(len(x))
         
@@ -105,7 +103,9 @@ if __name__ == '__main__':
         
         axes.text(
             0.05, 0.90,
-            '$\\theta_{:d} = {:.3f}$'.format(1 - ivar, fit_results.vars[1 - ivar].value),
+            '$\\theta_{:d} = {:.3f}$'.format(
+                1 - ivar, fit_results.parameters[1 - ivar].value
+            ),
             ha='left', va='bottom', transform=axes.transAxes
         )
         axes.text(0., 1.003, method_label, ha='left', va='bottom', transform=axes.transAxes)
@@ -119,9 +119,9 @@ if __name__ == '__main__':
     
     # Plot the 2D scan
     error_sf = 2.
-    v = fit_results.vars[0]
+    v = fit_results.parameters[0]
     p0_values = np.linspace(v.value - error_sf * v.error, v.value + error_sf * v.error, num=51)
-    v = fit_results.vars[1]
+    v = fit_results.parameters[1]
     p1_values = np.linspace(v.value - error_sf * v.error, v.value + error_sf * v.error, num=51)
     chi2 = np.empty((len(p0_values), len(p1_values)))
     
@@ -147,17 +147,20 @@ if __name__ == '__main__':
     
     
     # Mark global minimum
-    axes.plot([fit_results.vars[0].value], [fit_results.vars[1].value], marker='+', color='red')
+    axes.plot(
+        [fit_results.parameters[0].value],
+        [fit_results.parameters[1].value], marker='+', color='red'
+    )
     
     coord_transform = axes.transData + axes.transAxes.inverted()
     min_label_pos = list(coord_transform.transform(
-        [fit_results.vars[0].value, fit_results.vars[1].value]
+        [fit_results.parameters[0].value, fit_results.parameters[1].value]
     ))
     min_label_pos[0] += 0.015
     
     axes.text(
         min_label_pos[0], min_label_pos[1],
-        '{:.3f}'.format(1 - gammainc(loss_func.ndf / 2, fit_results.min_value / 2)),
+        '{:.3f}'.format(loss_func.p_value(fit_results.min_value)),
         ha='left', va='center', color='red', transform=axes.transAxes
     )
     
