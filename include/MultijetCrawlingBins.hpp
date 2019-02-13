@@ -5,6 +5,7 @@
 #include <Morphing.hpp>
 #include <Nuisances.hpp>
 
+#include <TGraphErrors.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TProfile.h>
@@ -43,7 +44,8 @@
  *
  * The class can also construct histograms with mean values of the chosen balance observables for
  * the given jet correction and set of nuisance parameters. This is done with methods
- * RecomputeBalanceData and RecomputeBalanceSim.
+ * RecomputeBalanceData and RecomputeBalanceSim. The residual deviations can be computed using
+ * method ComputeResiduals. Using this is the preferred way to visualize the performance of the fit.
  * 
  * [1] https://indico.cern.ch/event/780845/#16-multijet-analysis-with-craw
  */
@@ -211,8 +213,20 @@ private:
         
         /// Computes mean value of the balance observable in data in this chi^2 bin
         double MeanBalance(Nuisances const &nuisances) const;
+
+        /**
+         * Computes mean value of pt of the leading jet in this chi^2 bin
+         *
+         * The cached jet correction is applied.
+         */
+        double MeanPt() const;
         
-        /// Computes mean value of the balance observable in simulation in this chi^2 bin
+        /**
+         * Computes mean value of the balance observable in simulation in this chi^2 bin
+         *
+         * The computation takes into account the shift in the position of this chi^2 bin along pt,
+         * which caused by the cached jet correction.
+         */
         double MeanSimBalance(Nuisances const &nuisances) const;
         
         /// Returns the range in pt of the leading jet for this chi^2 bin
@@ -310,6 +324,18 @@ public:
       NuisanceDefinitions &nuisanceDefs, std::set<std::string> systToExclude = {});
     
 public:
+    /**
+     * Computes data-to-simulation residuals for given jet correction and nuisances
+     *
+     * The residuals are evaluated, in a given chi^2 bin, as the ratio between mean values of the
+     * balance observable in data and in simulation, minus 1. The point corresponding to each chi^2
+     * bin is assigned as the x coordinate the mean value of pt of the leading jet, which is
+     * computed taking the jet correction into account. All chi^2 bins are included in the returned
+     * graph, regardless of their mask statuses. The uncertainty for each point is set according to
+     * the input uncertainties of the mean values of the balance observable in data.
+     */
+    TGraphErrors ComputeResiduals(JetCorrBase const &corrector, Nuisances const &nuisances) const;
+
     /**
      * Returns number of chi^2 bins
      * 

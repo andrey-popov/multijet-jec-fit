@@ -159,6 +159,21 @@ double MultijetCrawlingBins::Chi2Bin::MeanBalance(Nuisances const &nuisances) co
 }
 
 
+double MultijetCrawlingBins::Chi2Bin::MeanPt() const
+{
+    double sumPt = 0., numEvents = 0.;
+
+    for (unsigned binPtLead = firstBin; binPtLead <= lastBin; ++binPtLead)
+    {
+        double const n = ptLeadHist->GetBinContent(binPtLead);
+        sumPt += jetCache->CorrectedMeanPtLead(binPtLead) * n;
+        numEvents += n;
+    }
+
+    return sumPt / numEvents;
+}
+
+
 double MultijetCrawlingBins::Chi2Bin::MeanSimBalance(Nuisances const &nuisances) const
 {
     double sumBal = 0., numEvents = 0.;
@@ -611,6 +626,24 @@ MultijetCrawlingBins::MultijetCrawlingBins(std::string const &fileName,
     
     for (auto &chi2Bin: chi2Bins)
         chi2Bin.SetJetCache(jetCache.get());
+}
+
+
+TGraphErrors MultijetCrawlingBins::ComputeResiduals(JetCorrBase const &corrector,
+  Nuisances const &nuisances) const
+{
+    jetCache->Update(corrector);
+    TGraphErrors graph(chi2Bins.size());
+
+    for (unsigned i = 0; i < chi2Bins.size(); ++i)
+    {
+        auto const &chi2Bin = chi2Bins[i];
+        double const simBalance = chi2Bin.MeanSimBalance(nuisances);
+        graph.SetPoint(i, chi2Bin.MeanPt(), chi2Bin.MeanBalance(nuisances) / simBalance - 1.);
+        graph.SetPointError(i, 0., chi2Bin.Uncertainty() / simBalance);
+    }
+
+    return graph;
 }
 
 
