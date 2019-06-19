@@ -3,3 +3,7 @@ lib/
 
 # Output files
 *.out
+
+# Vim swap
+*.swp
+
