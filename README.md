@@ -11,13 +11,15 @@ Dependencies:
   * Boost 1.34 or newer
   * ROOT 6
 
-The package is tested in environment [LCG_94python3](http://lcginfo.cern.ch/release/94python3/):
+The package is tested in environment [LCG_95apython3](http://lcginfo.cern.ch/release/95apython3/):
 
-  * CMake 3.11.1
-  * GCC 6.2.0
-  * Boost 1.66.0
-  * ROOT 6.14.04
-  * Python 3.6.5
+  * GCC 8.2
+  * CMake 3.11
+  * Boost 1.69
+  * ROOT 6.16
+  * Python 3.6
+  * NumPy 1.14
+  * Matplotlib 2.2
 
 To build the package and run an example fit program, execute
 
