@@ -194,26 +194,13 @@ class FitResults:
     """Pythonic wrapper for fit results from Minuit2Minimizer."""
     
     Variable = namedtuple('Variable', ['name', 'value', 'error'])
-    
-    def __init__(self, minimizer):
-        
-        self.status = minimizer.Status()
-        self.covariance_status = minimizer.CovMatrixStatus()
 
-        self.min_value = minimizer.MinValue()
 
-        self.parameters = []
-        
-        for p in minimizer.State().MinuitParameters():
-            self.parameters.append(
-                FitResults.Variable(p.Name(), p.Value(), p.Error())
-            )
-
-        num_pars = len(self.parameters)
-        self.covariance_matrix = np.empty((num_pars, num_pars))
-
-        for i, j in itertools.product(range(num_pars), range(num_pars)):
-            self.covariance_matrix[i, j] = minimizer.CovMatrix(i, j)
+    def __init__(self, arg):
+        if isinstance(arg, ROOT.Math.Minimizer):
+            self._from_minimizer(arg)
+        else:
+            self._from_dict(arg)
 
 
     def serialize(self):
@@ -235,4 +222,38 @@ class FitResults:
             'parameters': serialized_parameters,
             'covariance_matrix': self.covariance_matrix.tolist()
         }
+
+
+    def _from_dict(self, dictionary):
+        """Initialize from a result of serialize."""
+
+        self.status = dictionary['status']
+        self.covariance_status = dictionary['covariance_status']
+        self.min_value = dictionary['min_value']
+        self.parameters = [
+            FitResults.Variable(**v) for v in dictionary['parameters']
+        ]
+        self.covariance_matrix = np.array(dictionary['covariance_matrix'])
+
+    
+    def _from_minimizer(self, minimizer):
+        """Initialize from a ROOT.Math.Minimizer."""
+        
+        self.status = minimizer.Status()
+        self.covariance_status = minimizer.CovMatrixStatus()
+
+        self.min_value = minimizer.MinValue()
+
+        self.parameters = []
+        
+        for p in minimizer.State().MinuitParameters():
+            self.parameters.append(
+                FitResults.Variable(p.Name(), p.Value(), p.Error())
+            )
+
+        num_pars = len(self.parameters)
+        self.covariance_matrix = np.empty((num_pars, num_pars))
+
+        for i, j in itertools.product(range(num_pars), range(num_pars)):
+            self.covariance_matrix[i, j] = minimizer.CovMatrix(i, j)
 
