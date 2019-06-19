@@ -83,8 +83,7 @@ int main(int argc, char **argv)
         auto *measurement = new MultijetCrawlingBins(
           optionsMap["multijet"].as<string>(),
           (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal,
-          nuisanceDefs, {"JER"});
-        // JER uncertainty is not considered as the corresponding L2Res variations are buggy
+          nuisanceDefs);
         measurement->SetPtLeadRange(0., 1600.);
         measurements.emplace_back(measurement);
     }

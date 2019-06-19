@@ -37,7 +37,7 @@ if __name__ == '__main__':
         raise RuntimeError('No inputs provided.')
     
     
-    loss_func = jecfit.MultijetChi2(args.multijet, args.method, {'JER'})
+    loss_func = jecfit.MultijetChi2(args.multijet, args.method)
     loss_func.set_pt_range(0., 1.6e3)
     fit_results = loss_func.fit(args.verbosity)
 

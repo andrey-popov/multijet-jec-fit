@@ -73,7 +73,7 @@ if __name__ == '__main__':
             nuisances[param['name']] = param['value']
 
 
-    measurement = jecfit.MultijetChi2(args.inputs, args.method, {'JER'})
+    measurement = jecfit.MultijetChi2(args.inputs, args.method)
     max_pt = 1.6e3
     measurement.set_pt_range(0., max_pt)
 
