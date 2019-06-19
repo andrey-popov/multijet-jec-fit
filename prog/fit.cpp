@@ -1,16 +1,13 @@
 /**
- * Fits for jet correction combinning multiple analyses.
+ * Fits residual jet correction. The standard 2p parameterization is used. Results are saved in a
+ * text file.
  */
 
 #include <JetCorrConstraint.hpp>
 #include <JetCorrDefinitions.hpp>
 #include <FitBase.hpp>
-#include <MultijetBinnedSum.hpp>
 #include <MultijetCrawlingBins.hpp>
 #include <Nuisances.hpp>
-#include <PhotonJetBinnedSum.hpp>
-#include <PhotonJetRun1.hpp>
-#include <ZJetRun1.hpp>
 
 #include <Minuit2/Minuit2Minimizer.h>
 #include <Math/Functor.h>
@@ -39,13 +36,7 @@ int main(int argc, char **argv)
       ("help,h", "Prints help message")
       ("balance,b", po::value<string>()->default_value("PtBal"),
         "Type of balance variable, PtBal or MPF")
-      ("photonjet-run1", po::value<string>(), "Input file for photon+jet analysis, Run 1 style")
-      ("photonjet-binnedsum", po::value<string>(),
-        "Input file for photon+jet analysis, binned sum")
-      ("zjet-run1", po::value<string>(), "Input file for Z+jet analysis, Run 1 style")
-      ("multijet-binnedsum", po::value<string>(), "Input file for multijet analysis, binned sum")
-      ("multijet-crawlingbins", po::value<string>(),
-        "Input file for multijet analysis, crawling bins")
+      ("multijet", po::value<string>(), "Input file for multijet analysis")
       ("constraint,c", po::value<string>(),
         "Constraint for jet correction at reference pt scale, in the form \"correction,rel_unc\"")
       ("output,o", po::value<string>()->default_value("fit.out"),
@@ -84,33 +75,13 @@ int main(int argc, char **argv)
     NuisanceDefinitions nuisanceDefs;
 
 
-    // Construct all requested measurements
+    // Construct all requested measurements. Other measurements, such as Z+jet, can be added here.
     list<unique_ptr<MeasurementBase>> measurements;
     
-    if (optionsMap.count("photonjet-run1"))
-        measurements.emplace_back(new PhotonJetRun1(optionsMap["photonjet-run1"].as<string>(),
-          (useMPF) ? PhotonJetRun1::Method::MPF : PhotonJetRun1::Method::PtBal, nuisanceDefs));
-    
-    if (optionsMap.count("photonjet-binnedsum"))
-        measurements.emplace_back(new PhotonJetBinnedSum(
-          optionsMap["photonjet-binnedsum"].as<string>(),
-          (useMPF) ? PhotonJetBinnedSum::Method::MPF : PhotonJetBinnedSum::Method::PtBal,
-          nuisanceDefs));
-    
-    if (optionsMap.count("zjet-run1"))
-        measurements.emplace_back(new ZJetRun1(optionsMap["zjet-run1"].as<string>(),
-          (useMPF) ? ZJetRun1::Method::MPF : ZJetRun1::Method::PtBal));
-    
-    if (optionsMap.count("multijet-binnedsum"))
-        measurements.emplace_back(new MultijetBinnedSum(
-          optionsMap["multijet-binnedsum"].as<string>(),
-          (useMPF) ? MultijetBinnedSum::Method::MPF : MultijetBinnedSum::Method::PtBal,
-          nuisanceDefs));
-    
-    if (optionsMap.count("multijet-crawlingbins"))
+    if (optionsMap.count("multijet"))
     {
         auto *measurement = new MultijetCrawlingBins(
-          optionsMap["multijet-crawlingbins"].as<string>(),
+          optionsMap["multijet"].as<string>(),
           (useMPF) ? MultijetCrawlingBins::Method::MPF : MultijetCrawlingBins::Method::PtBal,
           nuisanceDefs, {"JER"});
         // JER uncertainty is not considered as the corresponding L2Res variations are buggy
