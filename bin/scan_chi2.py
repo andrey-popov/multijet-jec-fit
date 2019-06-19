@@ -17,6 +17,7 @@ import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
 import jecfit
+from utils import mpl_style
 
 
 def find_bin_edges(centres):
@@ -33,33 +34,27 @@ def find_bin_edges(centres):
 
 if __name__ == '__main__':
     
-    mpl.rc('figure', figsize=(6.0, 4.8))
-    
-    mpl.rc('xtick', top=True, direction='in')
-    mpl.rc('ytick', right=True, direction='in')
-    mpl.rc(['xtick.minor', 'ytick.minor'], visible=True)
-    
-    mpl.rc('lines', linewidth=1., markersize=3.)
-    mpl.rc('errorbar', capsize=1.)
-    
-    mpl.rc('axes.formatter', limits=[-3, 4], use_mathtext=True)
-    mpl.rc('axes', labelsize='large')
-    
+    plt.style.use(mpl_style)
     ROOT.gROOT.SetBatch(True)
-    
     
     arg_parser = argparse.ArgumentParser(__doc__)
     arg_parser.add_argument(
         '--multijet', help='File with inputs from multijet analysis'
     )
-    arg_parser.add_argument('-m', '--method', default='PtBal', help='Computation method')
-    arg_parser.add_argument('-o', '--output', default='fig', help='Directory for produced plots')
+    arg_parser.add_argument(
+        '-m', '--method', default='PtBal',
+        help='Computation method, "PtBal" or "MPF"'
+    )
+    arg_parser.add_argument(
+        '-o', '--output', default='fig/scans',
+        help='Directory for produced plots'
+    )
     arg_parser.add_argument('-l', '--label', help='Label for plots')
     args = arg_parser.parse_args()
     
     if not args.multijet:
         raise RuntimeError('No inputs provided.')
-    
+
     try:
         os.makedirs(args.output)
     except FileExistsError:
