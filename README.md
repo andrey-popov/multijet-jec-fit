@@ -26,7 +26,7 @@ To build the package and run an example fit program, execute
 ```sh
 source ./env.sh
 
-cd build
+mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 cd ..
