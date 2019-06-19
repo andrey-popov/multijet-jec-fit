@@ -17,9 +17,9 @@ using namespace std;
 void printResult(bool pass)
 {
     if (pass)
-        cout << "\e[1;32mTest passed.\e[0m";
+        cout << "\033[1;32mTest passed.\033[0m";
     else
-        cout << "\e[1;31mTest failed.\e[0m";
+        cout << "\033[1;31mTest failed.\033[0m";
     
     cout << endl;
 }
@@ -140,12 +140,12 @@ int main()
     
     if (not failure)
     {
-        cout << "\e[1;32mAll tests passed.\e[0m\n";
+        cout << "\033[1;32mAll tests passed.\033[0m\n";
         return EXIT_SUCCESS;
     }
     else
     {
-        cout << "\e[1;31mSome tests failed.\e[0m\n";
+        cout << "\033[1;31mSome tests failed.\033[0m\n";
         return EXIT_FAILURE;
     }
 }

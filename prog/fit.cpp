@@ -150,7 +150,7 @@ int main(int argc, char **argv)
                 relUnc = stod(optionText.substr(commaPos2 + 1));
             }
         }
-        catch (invalid_argument)
+        catch (invalid_argument const &)
         {
             cerr << "Failed to parse constraint \"" << optionText << "\".\n";
             return EXIT_FAILURE;
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
     
     
     // Print results
-    cout << "\n\n\e[1mSummary\e[0m:\n";
+    cout << "\n\n\033[1mSummary\033[0m:\n";
     cout << "  Status: " << minimizer.Status() << '\n';
     cout << "  Covariance matrix status: " << minimizer.CovMatrixStatus() << '\n';
     cout << "  Minimal value: " << minimizer.MinValue() << '\n';
