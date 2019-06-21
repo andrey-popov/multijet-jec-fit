@@ -57,10 +57,10 @@ Providing flag `--balance MPF` will run the MPF version of the measurement. The 
 The same can be achieved with a Python wrapper:
 
 ```sh
-./fit.py --multijet $inputdir/multijet.root --balance PtBal --output fit.json
+./fit.py --multijet $inputdir/multijet.root --method PtBal --period 2016BCD --output fit.json
 ```
 
-The results are saved in JSON format, and this is the format expected by other scripts discussed below. Program [`jq`](https://stedolan.github.io/jq/) is useful to work with such files. In particular, multiple files with fit results can be merged by running
+The data-taking period is specified for book-keeping. The results are saved in JSON format, and this is the format expected by other scripts discussed below. Program [`jq`](https://stedolan.github.io/jq/) is useful to work with such files. In particular, multiple files with fit results can be merged by running
 
 ```sh
 jq -s '.' fit1.json fit2.json > fits.json
@@ -69,3 +69,31 @@ jq -s '.' fit1.json fit2.json > fits.json
 Usually the executable for `jq` can just be downloaded and put under `$PATH`; there is no need to build it from source.
 
 **Important note**: Input files from the multijet analysis typically don't have any upper cut on the p<sub>T</sub> of the leading jet, but the &chi;<sup>2</sup> in bins of p<sub>T</sub> of the leading jet becomes unreliable for underpopulated bins. These should be excluded from the fit, which can be done using method `MultijetCrawlingBins::SetPtLeadRange`. The typical threshold is 1.6&nbsp;TeV (see [here](https://github.com/andrey-popov/multijet-jec/tree/Run2/analysis#inputs-for-the-fit-of-l3res-corrections)). The corresponding selection is currently hard-coded [here](https://github.com/andrey-popov/multijet-jec-fit/blob/36c35602851a514f50fb7002fbd5b0783c5ef0b4/prog/fit.cpp#L88) for C++ and [here](https://github.com/andrey-popov/multijet-jec-fit/blob/36c35602851a514f50fb7002fbd5b0783c5ef0b4/prog/fit.cpp#L88) for Python.
+
+
+## Diagnostic plots
+
+Several scripts to produce diagnostic plots are provided. Fitted jet corrections and pre- and post-fit residuals can be plotted with
+
+```sh
+plot_correction.py fits.json --period 2016BCD --method PtBal -o fig/corr.pdf
+multijet_residuals.py $inputdir/multijet.root fits.json \
+    --period 2016BCD --method PtBal -o fig/residuals.pdf
+```
+
+Here `fits.json` is a file with fit results produced as described above and flags `--period` and `--method` are used to identify a specific set of results within the file (and also for labels in the plots). Running
+
+```sh
+plot_parameters.py fits.json
+```
+
+generates plots with post-fit values of parameters of interest and nuisances.
+
+Finally, 1D and 2D scans of the &chi;<sup>2</sup> for the standard 2-parameter correction can be produced with
+
+```sh
+scan_chi2.py --multijet $inputdir/multijet.root 
+    --period 2016BCD --method PtBal -o fig/scans/
+```
+
+The &chi;<sup>2</sup> is minimized with respect to all nuisance parameters. Unlike all the scripts above, running the scans takes a good portion of an hour.
