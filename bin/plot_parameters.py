@@ -13,13 +13,17 @@ import matplotlib as mpl
 mpl.use('agg')
 from matplotlib import pyplot as plt
 
+from config import Config
 from utils import mpl_style
 
 
-def plot_parameters(fits, parameter_names, fig_name):
+def plot_parameters(fits, parameter_names, config, fig_name):
 
     periods = list({key[0] for key in fits})
     periods.sort()
+    period_labels = [config.get_period_label(p) for p in periods]
+
+    parameter_names = config.sort_parameters(parameter_names)
 
     fig = plt.figure(figsize=(6., 2 * len(parameter_names) / 0.8))
     fig.patch.set_alpha(0.)
@@ -29,10 +33,10 @@ def plot_parameters(fits, parameter_names, fig_name):
         axes = fig.add_subplot(gs[iparameter, 0])
 
         for variant, colour, x_offset, label in [
-            ('PtBal', 'C0', -0.1, r'$p_\mathrm{T}$ bal.'),
-            ('MPF', 'C1', 0.1, 'MPF')
+            ('PtBal', 'C0', -0.01, r'$p_\mathrm{T}$ bal.'),
+            ('MPF', 'C1', 0.01, 'MPF')
         ]:
-            x = np.arange(len(periods)) + x_offset
+            x = np.arange(len(periods)) + x_offset * len(periods)
             y, yerr = [], []
 
             for period in periods:
@@ -49,13 +53,17 @@ def plot_parameters(fits, parameter_names, fig_name):
             )
 
         axes.grid(axis='y', c='black', ls='dotted')
-        axes.set_ylabel(parameter_name)
+        axes.set_ylabel(config.get_parameter_label(parameter_name))
+
+        # Manually set position of label for the y axis so that they are
+        # aligned for all parameters
+        axes.get_yaxis().set_label_coords(-0.1, 0.5)
 
         axes.set_xticks(range(len(periods)))
 
         if iparameter == len(parameter_names) - 1:
             # This is the lowest pad
-            axes.set_xticklabels(periods)
+            axes.set_xticklabels(period_labels)
         else:
             axes.set_xticklabels([''] * len(axes.get_xticklabels()))
 
@@ -80,6 +88,8 @@ if __name__ == '__main__':
     except FileExistsError:
         pass
 
+    config = Config('config/plot_config.yaml')
+
     plt.style.use(mpl_style)
 
 
@@ -103,8 +113,8 @@ if __name__ == '__main__':
             nuisances.add(name)
 
 
-    plot_parameters(fits, pois, os.path.join(args.fig_dir, 'poi.pdf'))
+    plot_parameters(fits, pois, config, os.path.join(args.fig_dir, 'poi.pdf'))
     plot_parameters(
-        fits, nuisances, os.path.join(args.fig_dir, 'nuisances.pdf')
+        fits, nuisances, config, os.path.join(args.fig_dir, 'nuisances.pdf')
     )
 

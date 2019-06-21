@@ -16,6 +16,7 @@ import matplotlib as mpl
 mpl.use('agg')
 from matplotlib import pyplot as plt
 
+from config import Config
 import jecfit
 from utils import mpl_style
 
@@ -76,6 +77,8 @@ if __name__ == '__main__':
         method_label = '$p_\\mathrm{T}$ balance'
     else:
         method_label = 'MPF'
+
+    config = Config('config/plot_config.yaml')
 
 
     with open(args.fits) as f:
@@ -157,7 +160,9 @@ if __name__ == '__main__':
     axes.set_ylabel('L3Res correction')
 
     axes.text(
-        1., 1.002, '{}, {}'.format(method_label, args.period),
+        1., 1.002, '{}, {}'.format(
+            method_label, config.get_period_label(args.period)
+        ),
         ha='right', va='bottom', transform=axes.transAxes
     )
 

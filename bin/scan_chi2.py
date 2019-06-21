@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+from config import Config
 import jecfit
 from utils import mpl_style
 
@@ -41,6 +42,7 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         '--multijet', help='File with inputs from multijet analysis'
     )
+    arg_parser.add_argument('-p', '--period', help='Data-taking period')
     arg_parser.add_argument(
         '-m', '--method', default='PtBal',
         help='Computation method, "PtBal" or "MPF"'
@@ -49,7 +51,6 @@ if __name__ == '__main__':
         '-o', '--output', default='fig/scans',
         help='Directory for produced plots'
     )
-    arg_parser.add_argument('-l', '--label', help='Label for plots')
     args = arg_parser.parse_args()
     
     if not args.multijet:
@@ -64,6 +65,8 @@ if __name__ == '__main__':
         method_label = '$p_\\mathrm{T}$ balance'
     else:
         method_label = 'MPF'
+
+    config = Config('config/plot_config.yaml')
     
     
     loss_func = jecfit.MultijetChi2(args.multijet, args.method)
@@ -103,10 +106,12 @@ if __name__ == '__main__':
             ),
             ha='left', va='bottom', transform=axes.transAxes
         )
-        axes.text(0., 1.003, method_label, ha='left', va='bottom', transform=axes.transAxes)
-        
-        if args.label:
-            axes.text(1., 1.003, args.label, ha='right', va='bottom', transform=axes.transAxes)
+        axes.text(
+            1., 1.002, '{}, {}'.format(
+                method_label, config.get_period_label(args.period)
+            ),
+            ha='right', va='bottom', transform=axes.transAxes
+        )
         
         fig.savefig(os.path.join(args.output, 'scan_p{:d}.pdf'.format(ivar)))
         plt.close(fig)
@@ -135,10 +140,12 @@ if __name__ == '__main__':
     
     axes.set_xlabel('$\\theta_0$')
     axes.set_ylabel('$\\theta_1$')
-    axes.text(0., 1.003, method_label, ha='left', va='bottom', transform=axes.transAxes)
-    
-    if args.label:
-        axes.text(1., 1.003, args.label, ha='right', va='bottom', transform=axes.transAxes)
+    axes.text(
+        1., 1.002, '{}, {}'.format(
+            method_label, config.get_period_label(args.period)
+        ),
+        ha='right', va='bottom', transform=axes.transAxes
+    )
     
     
     # Mark global minimum

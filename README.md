@@ -24,6 +24,7 @@ Requirements for the Python part:
   * ROOT 6.16
   * NumPy 1.14
   * Matplotlib 2.2
+  * PyYAML 3.13
 
 All the dependencies are satisfied in environment [LCG_95apython3](http://lcginfo.cern.ch/release/95apython3/), which can be set up from `/cvmfs/` with
 

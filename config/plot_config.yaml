@@ -1,0 +1,27 @@
+# Information to construct period labels in plots
+periods:
+  2016BCD:
+    lumi: 12.6
+    label: 2016BCD
+  2016EF1:
+    lumi: 6.7
+    label: "$\\mathrm{2016EF}_{1}$"
+  2016F2GH:
+    lumi: 16.6
+    label: "$\\mathrm{2016F_{2}GH}$"
+  2016All:
+    lumi: 35.9
+    label: "2016"
+
+nuisances:
+  # Nice labels for nuisances
+  labels:
+    MultijetMEFactor: "$\\mu_\\mathrm{F}$"
+
+  # Order in which nuisances should be shown
+  order:
+    - L1Res
+    - L2Res
+    - JER
+    - MultijetMEFactor
+
