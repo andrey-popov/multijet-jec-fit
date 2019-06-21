@@ -119,12 +119,12 @@ if __name__ == '__main__':
 
     # Find shifts with respect to nominal values of POIs that correspond
     # to semiaxes of the 1 sigma ellipse.  Coordinate transformation
-    # given by matrix v below diagonalizes the covariance matrix, which
-    # becomes diag(w).  Transformation diag(w)^(-1/2) * v turns the
-    # covariance matrix into identity one.  To find the base shifts,
+    # given by matrix v.T below diagonalizes the covariance matrix,
+    # which becomes diag(w).  Transformation diag(w)^(-1/2) * v.T turns
+    # the covariance matrix into identity one.  To find the base shifts,
     # apply the inverse of that transformation to an identity matrix.
     w, v = np.linalg.eigh(covariance)
-    a = np.dot(v.T, np.diag(np.sqrt(w)))
+    a = np.dot(v, np.diag(np.sqrt(w)))
     base_shifts = [a[:, i] for i in range(a.shape[1])]
 
 
