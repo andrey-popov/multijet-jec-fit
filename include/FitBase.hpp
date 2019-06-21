@@ -62,6 +62,16 @@ public:
      * specified relative tolerance.
      */
     virtual double UndoCorr(double pt, double tolerance = 1e-10) const;
+
+protected:
+    /**
+     * \brief Hook that is called each time after parameters have been updated via SetParams
+     *
+     * Does nothing by default. A derived class can use this method to perform an initialization
+     * after a change in the parameters.
+     */
+    virtual void ParamsUpdatedHook()
+    {}
     
 protected:
     /// Current parameters of the correction

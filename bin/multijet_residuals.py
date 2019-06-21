@@ -64,6 +64,8 @@ if __name__ == '__main__':
         # results of a single fit.
         fit = fits
 
+    corr_form = fit.get('corr_form', '2p')
+
 
     poi_regex = re.compile(r'^p[0-9]+$')
     poi_values = []
@@ -76,7 +78,9 @@ if __name__ == '__main__':
             nuisances[param['name']] = param['value']
 
 
-    measurement = jecfit.MultijetChi2(args.inputs, args.method)
+    measurement = jecfit.MultijetChi2(
+        args.inputs, args.method, corr_form=corr_form
+    )
     max_pt = 1.6e3
     measurement.set_pt_range(0., max_pt)
 

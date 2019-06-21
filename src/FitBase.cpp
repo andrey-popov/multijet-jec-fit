@@ -44,12 +44,14 @@ void JetCorrBase::SetParams(std::vector<double> const &newParams)
     }
     
     parameters = newParams;
+    ParamsUpdatedHook();
 }
 
 
 void JetCorrBase::SetParams(double const *newParams)
 {
     std::copy(newParams, newParams + GetNumParams(), parameters.begin());
+    ParamsUpdatedHook();
 }
 
 

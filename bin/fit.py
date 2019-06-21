@@ -24,6 +24,9 @@ if __name__ == '__main__':
         '-m', '--method', default='PtBal', help='Computation method'
     )
     arg_parser.add_argument(
+        '--corr', default='2p', help='Functional form for jet correction'
+    )
+    arg_parser.add_argument(
         '-o', '--output', default='fit.json',
         help='Name for output JSON file'
     )
@@ -37,7 +40,9 @@ if __name__ == '__main__':
         raise RuntimeError('No inputs provided.')
     
     
-    loss_func = jecfit.MultijetChi2(args.multijet, args.method)
+    loss_func = jecfit.MultijetChi2(
+        args.multijet, args.method, corr_form=args.corr
+    )
     loss_func.set_pt_range(0., 1.6e3)
     fit_results = loss_func.fit(args.verbosity)
 
@@ -47,7 +52,8 @@ if __name__ == '__main__':
         'ndf': loss_func.ndf,
         'p_value': loss_func.p_value(fit_results.min_value),
         'period': args.period,
-        'variant': args.method
+        'variant': args.method,
+        'corr_form': args.corr
     })
 
     with open(args.output, 'w') as out_file:

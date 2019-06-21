@@ -90,3 +90,48 @@ double JetCorrStd3P::fL1(double pt) const
 {
     return 1. - (paramsL1[0] + paramsL1[1] * std::log(pt)) / pt;
 }
+
+
+JetCorrSpline::JetCorrSpline(double minPt, double maxPt, unsigned numKnots):
+    JetCorrBase(numKnots)
+{
+    // Equidistant knots in log(pt)
+    knots.reserve(numKnots);
+    double const logMinPt = std::log(minPt), logMaxPt = std::log(maxPt);
+    double const step = (logMaxPt - logMinPt) / (numKnots - 1);
+
+    for (double logPt = logMinPt; logPt < logMaxPt - step / 2; logPt += step)
+        knots.emplace_back(logPt);
+
+    knots.emplace_back(logMaxPt);
+
+    ParamsUpdatedHook();
+}
+
+
+double JetCorrSpline::Eval(double pt) const
+{
+    double const logPt = std::log(pt);
+
+    // Interpolate between the knots using the spline but extrapolate linearly
+    if (logPt < knots.front())
+    {
+        double const x0 = knots.front();
+        return 1 + parameters.front() + corrSpline->Derivative(x0) * (logPt - x0);
+    }
+    else if (logPt > knots.back())
+    {
+        double const x0 = knots.back();
+        return 1 + parameters.back() + corrSpline->Derivative(x0) * (logPt - x0);
+    }
+    else
+        return 1 + corrSpline->Eval(logPt);
+}
+
+
+void JetCorrSpline::ParamsUpdatedHook()
+{
+    // Force the spline through all knots treating parameters as values at the knots
+    corrSpline.reset(new TSpline3("", knots.data(), parameters.data(), knots.size()));
+}
+

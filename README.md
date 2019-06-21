@@ -60,7 +60,9 @@ The same can be achieved with a Python wrapper:
 ./fit.py --multijet $inputdir/multijet.root --method PtBal --period 2016BCD --output fit.json
 ```
 
-The data-taking period is specified for book-keeping. The results are saved in JSON format, and this is the format expected by other scripts discussed below. Program [`jq`](https://stedolan.github.io/jq/) is useful to work with such files. In particular, multiple files with fit results can be merged by running
+The data-taking period is specified for book-keeping. By default, the standard 2-parameter correction is fitted; to use a spline correction instead, provide flag `--corr spline`.
+
+The results obtained by `fit.py` are saved in JSON format, and this is the format expected by other scripts discussed below. Program [`jq`](https://stedolan.github.io/jq/) is useful to work with such files. In particular, multiple files with fit results can be merged by running
 
 ```sh
 jq -s '.' fit1.json fit2.json > fits.json

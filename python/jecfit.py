@@ -22,6 +22,24 @@ ROOT.gSystem.Load(os.path.join(
 JetCorrStd2P = ROOT.JetCorrStd2P
 JetCorrStd2P.__doc__ = """L3Res correction with two parameters."""
 
+JetCorrSpline = ROOT.JetCorrSpline
+JetCorrSpline.__doc__ = """L3Res correction based on spline."""
+
+
+def create_correction(label):
+    """Create jet correction object from a label.
+
+    The given label defines the functional form of the correction.  When
+    relevant, hyperparameters are set.
+    """
+
+    if label == '2p':
+        return JetCorrStd2P()
+    elif label == 'spline':
+        return JetCorrSpline(30., 1500., 5)
+    else:
+        raise RuntimeError('Unknown label "{}".'.format(label))
+
 
 class MultijetChi2:
     """Python wrapper to fit corrections using multijet data.
@@ -29,8 +47,16 @@ class MultijetChi2:
     The standard correction with two parameters is used.
     """
     
-    def __init__(self, file_path, method, exclude_syst=set()):
-        """Initialize from input ROOT file and method label."""
+    def __init__(self, file_path, method, exclude_syst=set(), corr_form='2p'):
+        """Initialize from results of multijet analysis.
+        
+        Arguments:
+            file_path:  Path to ROOT file with inputs from the multijet
+                analysis.
+            method:     Method to be used, "PtBal" or "MPF".
+            exclude_syst:  Systematic uncertainties to ignore.
+            correction_form:  Functional form for jet correction.
+        """
         
         if method == 'PtBal':
             method_code = 0
@@ -49,7 +75,7 @@ class MultijetChi2:
             file_path, method_code, self._nuisance_defs,
             exclude_syst_converted
         )
-        self._jet_corr = ROOT.JetCorrStd2P()
+        self._jet_corr = create_correction(corr_form)
         self._loss_func = ROOT.CombLossFunction(
             self._jet_corr, self._nuisance_defs
         )

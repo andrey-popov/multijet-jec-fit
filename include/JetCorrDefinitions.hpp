@@ -10,6 +10,10 @@
 #include <FitBase.hpp>
 
 #include <array>
+#include <memory>
+#include <vector>
+
+#include <TSpline.h>
 
 
 /**
@@ -147,3 +151,46 @@ private:
     /// (Fixed) parameters describing L1 corrections
     std::array<double, 2> paramsL1;
 };
+
+
+/**
+ * \brief JetCorrSpline
+ * \brief Correction described with a cubic spline
+ *
+ * The spline is evaluated as a function of log(pt). It is defined on a uniform grid of knots
+ * specified in the constructor. Parameters set the value of the correction, minus 1, at the knots.
+ * The extrapolation is done linearly in log(pt).
+ */
+class JetCorrSpline: public JetCorrBase
+{
+public:
+    /// Constructor from a uniform grid in log(pt)
+    JetCorrSpline(double minPt, double maxPt, unsigned numKnots);
+
+public:
+    /**
+     * \brief Evaluates correction at given pt
+     *
+     * If given pt is outside of the full range of the knots, performs a linear extrapolation in
+     * log(pt).
+     *
+     * Implemented from JetCorrBase.
+     */
+    virtual double Eval(double pt) const override;
+
+protected:
+    /**
+     * \brief Remakes the spline from updated parameters
+     *
+     * Reimplemented from JetCorrBase.
+     */
+    virtual void ParamsUpdatedHook() override;
+
+private:
+    /// Knots in log(pt)
+    std::vector<double> knots;
+
+    /// Spline as a function of log(pt) that represents correction minus 1
+    std::unique_ptr<TSpline3> corrSpline;
+};
+

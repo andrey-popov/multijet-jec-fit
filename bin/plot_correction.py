@@ -24,9 +24,9 @@ from utils import mpl_style
 class Correction:
     """Wrapper for jet correction."""
 
-    def __init__(self, cls=jecfit.JetCorrStd2P):
+    def __init__(self, corr_form='2p'):
         """Initialize from a C++ class."""
-        self.corr = cls()
+        self.corr = jecfit.create_correction(corr_form)
 
 
     def __call__(self, pt):
@@ -102,6 +102,7 @@ if __name__ == '__main__':
         fit_info = fit_infos
 
     fit_results = jecfit.FitResults(fit_info)
+    corr_form = fit_info.get('corr_form', '2p')
 
 
     # POIs always precede nuisances.  Count how many they are.
@@ -110,7 +111,7 @@ if __name__ == '__main__':
         1 for p in fit_results.parameters if poi_regex.match(p.name)
     )
 
-    corr_function = Correction()
+    corr_function = Correction(corr_form)
     nominal_params = np.asarray(
         [p.value for p in fit_results.parameters[:num_pois]]
     )
