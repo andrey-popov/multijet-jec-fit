@@ -1,5 +1,6 @@
 from collections import namedtuple
 import itertools
+import re
 import os
 
 import scipy.special
@@ -12,6 +13,7 @@ _location = os.path.dirname(os.path.dirname(__file__))
 ROOT.gInterpreter.AddIncludePath(os.path.join(_location, 'include'))
 ROOT.gInterpreter.Declare('#include <FitBase.hpp>')
 ROOT.gInterpreter.Declare('#include <JetCorrDefinitions.hpp>')
+ROOT.gInterpreter.Declare('#include <JetCorrConstraint.hpp>')
 ROOT.gInterpreter.Declare('#include <MultijetCrawlingBins.hpp>')
 ROOT.gInterpreter.Declare('#include <PythonWrapping.hpp>')
 ROOT.gSystem.Load(os.path.join(_location, 'lib', 'libjecfit.so'))
@@ -24,6 +26,25 @@ JetCorrStd2P.__doc__ = """L3Res correction with two parameters."""
 
 JetCorrSpline = ROOT.JetCorrSpline
 JetCorrSpline.__doc__ = """L3Res correction based on spline."""
+
+
+def create_constraint(option_text):
+    """Create constraint for jet correction from text description.
+
+    The description must be of the form
+    [<reference pt>,]<correction value>,<rel. uncertainty>
+    """
+    params = [float(token) for token in option_text.split(',')]
+
+    if len(params) == 3:
+        return ROOT.JetCorrConstraint(*params)
+    elif len(params) == 2:
+        # Use default reference pt
+        return ROOT.JetCorrConstraint(208., *params)
+    else:
+        raise RuntimeError(
+            'Failed to parse constraint definition "{}".'.format(option_text)
+        )
 
 
 def create_correction(label):
@@ -47,7 +68,10 @@ class MultijetChi2:
     The standard correction with two parameters is used.
     """
     
-    def __init__(self, file_path, method, exclude_syst=set(), corr_form='2p'):
+    def __init__(
+        self, file_path, method, exclude_syst=set(), corr_form='2p',
+        constraint_option=None
+    ):
         """Initialize from results of multijet analysis.
         
         Arguments:
@@ -56,6 +80,8 @@ class MultijetChi2:
             method:     Method to be used, "PtBal" or "MPF".
             exclude_syst:  Systematic uncertainties to ignore.
             correction_form:  Functional form for jet correction.
+            constraint_option:  String defining a constraint to be
+                applied to the jet correction.  See create_constraint().
         """
         
         if method == 'PtBal':
@@ -75,11 +101,21 @@ class MultijetChi2:
             file_path, method_code, self._nuisance_defs,
             exclude_syst_converted
         )
+
+        if constraint_option:
+            self._constraint = create_constraint(constraint_option)
+            self._nuisance_defs.Register('constraint')
+        else:
+            self._constraint = None
+
         self._jet_corr = create_correction(corr_form)
         self._loss_func = ROOT.CombLossFunction(
             self._jet_corr, self._nuisance_defs
         )
         self._loss_func.AddMeasurement(self.measurement)
+
+        if constraint_option:
+            self._loss_func.AddMeasurement(self._constraint)
     
     
     def __call__(self, params, nuisances='profile'):

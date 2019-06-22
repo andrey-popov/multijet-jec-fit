@@ -79,7 +79,8 @@ if __name__ == '__main__':
 
 
     measurement = jecfit.MultijetChi2(
-        args.inputs, args.method, corr_form=corr_form
+        args.inputs, args.method, corr_form=corr_form,
+        constraint_option=fit.get('constraint', None)
     )
     max_pt = 1.6e3
     measurement.set_pt_range(0., max_pt)

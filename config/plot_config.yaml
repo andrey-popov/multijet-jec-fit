@@ -17,6 +17,7 @@ nuisances:
   # Nice labels for nuisances
   labels:
     MultijetMEFactor: "$\\mu_\\mathrm{F}$"
+    constraint: "$c_{\\tau-\\mathrm{ref}}$"
 
   # Order in which nuisances should be shown
   order:
@@ -24,4 +25,5 @@ nuisances:
     - L2Res
     - JER
     - MultijetMEFactor
+    - constraint
 
