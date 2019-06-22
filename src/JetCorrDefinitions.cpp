@@ -109,6 +109,18 @@ JetCorrSpline::JetCorrSpline(double minPt, double maxPt, unsigned numKnots):
 }
 
 
+JetCorrSpline::JetCorrSpline(std::vector<double> const &ptKnots):
+    JetCorrBase(ptKnots.size())
+{
+    knots.reserve(ptKnots.size());
+
+    for (auto const &pt: ptKnots)
+        knots.emplace_back(std::log(pt));
+
+    ParamsUpdatedHook();
+}
+
+
 double JetCorrSpline::Eval(double pt) const
 {
     double const logPt = std::log(pt);

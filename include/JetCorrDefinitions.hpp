@@ -167,6 +167,13 @@ public:
     /// Constructor from a uniform grid in log(pt)
     JetCorrSpline(double minPt, double maxPt, unsigned numKnots);
 
+    /**
+     * \brief constructor from a list of knots in pt
+     *
+     * The list must be sorted.
+     */
+    JetCorrSpline(std::vector<double> const &ptKnots);
+
 public:
     /**
      * \brief Evaluates correction at given pt
