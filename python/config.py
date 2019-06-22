@@ -68,23 +68,43 @@ class Config:
         """Sort parameters as specified in the configuration.
 
         If some of the parameters are not mentioned in the
-        configuration, append them at the end.
+        configuration, append them at the end.  POIs are always sorted
+        first, and they are ordered by their indices.
         """
+
+        sorted_names = []
+
+        # Identify POIs
+        poi_regex = re.compile(r'^p(\d+)$')
+        poi_indices = []
+        non_pois = []
+
+        for name in parameter_names:
+            match = poi_regex.match(name)
+
+            if match:
+                poi_indices.append(int(match.group(1)))
+            else:
+                non_pois.append(name)
+
+        poi_indices.sort()
+
+        for i in poi_indices:
+            sorted_names.append('p{}'.format(i))
+
 
         try:
             desired_order = self.config['nuisances']['order']
         except KeyError:
-            return parameter_names
-
-        sorted_names = []
+            return sorted_names + non_pois
 
         # First include parameters mentioned in the configuration, then
         # everything remaining
         for name in desired_order:
-            if name in parameter_names:
+            if name in non_pois:
                 sorted_names.append(name)
 
-        for name in parameter_names:
+        for name in non_pois:
             if name not in desired_order:
                 sorted_names.append(name)
 
