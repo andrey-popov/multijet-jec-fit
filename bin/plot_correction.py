@@ -157,7 +157,7 @@ if __name__ == '__main__':
         mpl.ticker.LogFormatter(minor_thresholds=(2, 0.4))
     )
 
-    axes.set_xlabel(r'$\tau_{1}^\mathrm{L2}$ [GeV]')
+    axes.set_xlabel(r'$\tau^\mathrm{L2}$ [GeV]')
     axes.set_ylabel('L3Res correction')
 
     axes.text(
